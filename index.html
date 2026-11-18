@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,147 +12,189 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 
 <body>
 
-    <div class="app-shell">
+<div class="app-shell">
 
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
+    <!-- SIDEBAR -->
 
-            <div class="brand">
-                <div class="brand-icon">Z</div>
+    <aside class="sidebar" id="sidebar">
 
-                <div class="brand-info">
-                    <h1>ZERYNX</h1>
-                    <span>VPN CONTROL</span>
-                </div>
+        <div class="brand">
 
-                <button class="sidebar-close" id="sidebarClose" aria-label="Close menu">
-                    ×
-                </button>
+            <div class="brand-icon">Z</div>
+
+            <div class="brand-info">
+                <h1>ZERYNX</h1>
+                <span>VPN CONTROL</span>
             </div>
 
-            <div class="sidebar-section">
-                <span class="section-label" data-fa="مدیریت اصلی" data-en="MAIN MENU">
-                    مدیریت اصلی
-                </span>
+            <button class="sidebar-close" id="sidebarClose">×</button>
 
-                <nav class="nav-menu">
+        </div>
 
-                    <a href="#dashboard" class="nav-item active" data-page="dashboard">
-                        <span class="nav-icon">◫</span>
-                        <span data-fa="داشبورد" data-en="Dashboard">داشبورد</span>
-                    </a>
+        <!-- MAIN MENU -->
 
-                    <a href="#users" class="nav-item" data-page="users">
-                        <span class="nav-icon">♙</span>
-                        <span data-fa="کاربران" data-en="Users">کاربران</span>
-                    </a>
+        <div class="sidebar-section">
 
-                    <a href="#inbounds" class="nav-item" data-page="inbounds">
-                        <span class="nav-icon">⌘</span>
-                        <span data-fa="این‌باندها" data-en="Inbounds">این‌باندها</span>
-                    </a>
+            <span class="section-label"
+                  data-fa="مدیریت اصلی"
+                  data-en="MAIN MENU">
+                مدیریت اصلی
+            </span>
 
-                    <a href="#nodes" class="nav-item" data-page="nodes">
-                        <span class="nav-icon">◎</span>
-                        <span data-fa="نودها" data-en="Nodes">نودها</span>
-                    </a>
+            <nav class="nav-menu">
 
-                    <a href="#subscriptions" class="nav-item" data-page="subscriptions">
-                        <span class="nav-icon">▤</span>
-                        <span data-fa="اشتراک‌ها" data-en="Subscriptions">اشتراک‌ها</span>
-                    </a>
-
-                </nav>
-            </div>
-
-            <div class="sidebar-section">
-                <span class="section-label" data-fa="ابزارها" data-en="TOOLS">
-                    ابزارها
-                </span>
-
-                <nav class="nav-menu">
-
-                    <a href="#traffic" class="nav-item" data-page="traffic">
-                        <span class="nav-icon">⌁</span>
-                        <span data-fa="مصرف ترافیک" data-en="Traffic">مصرف ترافیک</span>
-                    </a>
-
-                    <a href="#logs" class="nav-item" data-page="logs">
-                        <span class="nav-icon">▧</span>
-                        <span data-fa="گزارش‌ها" data-en="Activity Logs">گزارش‌ها</span>
-                    </a>
-
-                </nav>
-            </div>
-
-            <div class="sidebar-bottom">
-                <div class="connection-status">
-                    <span class="status-dot"></span>
-                    <div>
-                        <strong data-fa="وضعیت پنل" data-en="Panel Status">وضعیت پنل</strong>
-                        <small data-fa="رابط کاربری آماده است" data-en="Interface initialized">
-                            رابط کاربری آماده است
-                        </small>
-                    </div>
-                </div>
-
-                <a href="#settings" class="nav-item" data-page="settings">
-                    <span class="nav-icon">⚙</span>
-                    <span data-fa="تنظیمات" data-en="Settings">تنظیمات</span>
+                <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">◫</span>
+                    <span data-fa="داشبورد" data-en="Dashboard">داشبورد</span>
                 </a>
+
+                <a href="#users" class="nav-item" data-page="users">
+                    <span class="nav-icon">♙</span>
+                    <span data-fa="کاربران" data-en="Users">کاربران</span>
+                </a>
+
+                <a href="#create-user" class="nav-item" data-page="create-user">
+                    <span class="nav-icon">＋</span>
+                    <span data-fa="ساخت کاربر جدید" data-en="Create User">ساخت کاربر جدید</span>
+                </a>
+
+                <a href="#inbounds" class="nav-item" data-page="inbounds">
+                    <span class="nav-icon">⌘</span>
+                    <span data-fa="این‌باندها" data-en="Inbounds">این‌باندها</span>
+                </a>
+
+                <a href="#nodes" class="nav-item" data-page="nodes">
+                    <span class="nav-icon">◎</span>
+                    <span data-fa="مدیریت نودها" data-en="Nodes">مدیریت نودها</span>
+                </a>
+
+                <a href="#subscriptions" class="nav-item" data-page="subscriptions">
+                    <span class="nav-icon">▤</span>
+                    <span data-fa="اشتراک‌ها" data-en="Subscriptions">اشتراک‌ها</span>
+                </a>
+
+            </nav>
+
+        </div>
+
+        <!-- TOOLS -->
+
+        <div class="sidebar-section">
+
+            <span class="section-label"
+                  data-fa="ابزارها"
+                  data-en="TOOLS">
+                ابزارها
+            </span>
+
+            <nav class="nav-menu">
+
+                <a href="#traffic" class="nav-item" data-page="traffic">
+                    <span class="nav-icon">⌁</span>
+                    <span data-fa="مصرف ترافیک" data-en="Traffic">مصرف ترافیک</span>
+                </a>
+
+                <a href="#logs" class="nav-item" data-page="logs">
+                    <span class="nav-icon">▧</span>
+                    <span data-fa="گزارش فعالیت‌ها" data-en="Activity Logs">گزارش فعالیت‌ها</span>
+                </a>
+
+            </nav>
+
+        </div>
+
+        <!-- BOTTOM -->
+
+        <div class="sidebar-bottom">
+
+            <div class="connection-status">
+
+                <span class="status-dot"></span>
+
+                <div>
+                    <strong data-fa="وضعیت پنل" data-en="Panel Status">وضعیت پنل</strong>
+                    <small data-fa="در انتظار اتصال API" data-en="Waiting for API">
+                        در انتظار اتصال API
+                    </small>
+                </div>
+
             </div>
 
-        </aside>
+            <a href="#settings" class="nav-item" data-page="settings">
+                <span class="nav-icon">⚙</span>
+                <span data-fa="تنظیمات" data-en="Settings">تنظیمات</span>
+            </a>
 
-        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+            <a href="#logout" class="nav-item" id="logoutButton">
+                <span class="nav-icon">⇥</span>
+                <span data-fa="خروج از حساب" data-en="Logout">خروج از حساب</span>
+            </a>
 
-        <!-- Main Content -->
-        <main class="main-content">
+        </div>
 
-            <header class="topbar">
+    </aside>
 
-                <div class="topbar-right">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-                    <button class="menu-toggle" id="menuToggle" aria-label="Open menu">
-                        ☰
-                    </button>
+    <!-- MAIN CONTENT -->
 
-                    <div class="breadcrumb">
-                        <span>ZERYNX</span>
-                        <span class="breadcrumb-divider">/</span>
-                        <strong id="pageTitle">داشبورد</strong>
+    <main class="main-content">
+
+        <!-- TOPBAR -->
+
+        <header class="topbar">
+
+            <div class="topbar-right">
+
+                <button class="menu-toggle" id="menuToggle">☰</button>
+
+                <div class="breadcrumb">
+                    <span>ZERYNX</span>
+                    <span class="breadcrumb-divider">/</span>
+                    <strong id="pageTitle">داشبورد</strong>
+                </div>
+
+            </div>
+
+            <div class="topbar-left">
+
+                <button class="topbar-button" id="languageToggle">EN</button>
+
+                <button class="topbar-button theme-toggle" id="themeToggle">☼</button>
+
+                <div class="admin-profile">
+
+                    <div class="admin-avatar">A</div>
+
+                    <div class="admin-info">
+                        <strong id="adminUsername"
+                                data-fa="مدیر سیستم"
+                                data-en="Administrator">
+                            مدیر سیستم
+                        </strong>
+
+                        <small>OWNER</small>
                     </div>
 
                 </div>
 
-                <div class="topbar-left">
+            </div>
 
-                    <button class="topbar-button" id="languageToggle">
-                        EN
-                    </button>
+        </header>
 
-                    <button class="topbar-button theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                        ☼
-                    </button>
+        <section class="page-content">
 
-                    <div class="admin-profile">
-                        <div class="admin-avatar">A</div>
-                        <div class="admin-info">
-                            <strong data-fa="مدیر سیستم" data-en="Administrator">مدیر سیستم</strong>
-                            <small>Admin</small>
-                        </div>
-                    </div>
+            <!-- ====================================== -->
+            <!-- DASHBOARD -->
+            <!-- ====================================== -->
 
-                </div>
-
-            </header>
-
-            <section class="page-content">
+            <section class="page-section" id="page-dashboard">
 
                 <div class="page-heading">
 
@@ -172,20 +215,21 @@
                     </div>
 
                     <div class="heading-actions">
-                        <button class="button button-secondary">
-                            <span>↻</span>
+
+                        <button class="button button-secondary" id="refreshDashboard">
+                            ↻
                             <span data-fa="بروزرسانی" data-en="Refresh">بروزرسانی</span>
                         </button>
 
-                        <button class="button button-primary" data-page="users">
-                            <span>＋</span>
+                        <button class="button button-primary" data-page="create-user">
+                            ＋
                             <span data-fa="کاربر جدید" data-en="New User">کاربر جدید</span>
                         </button>
+
                     </div>
 
                 </div>
 
-                <!-- Statistics -->
                 <div class="stats-grid">
 
                     <article class="stat-card">
@@ -193,11 +237,8 @@
                             <span data-fa="کل کاربران" data-en="Total Users">کل کاربران</span>
                             <span class="stat-icon cyan">♙</span>
                         </div>
-                        <div class="stat-value">0</div>
-                        <div class="stat-footer">
-                            <span class="stat-neutral">—</span>
-                            <span data-fa="کاربر ثبت‌شده" data-en="Registered users">کاربر ثبت‌شده</span>
-                        </div>
+                        <div class="stat-value" id="totalUsers">—</div>
+                        <div class="stat-footer">Registered Users</div>
                     </article>
 
                     <article class="stat-card">
@@ -205,11 +246,8 @@
                             <span data-fa="کاربران فعال" data-en="Active Users">کاربران فعال</span>
                             <span class="stat-icon green">◉</span>
                         </div>
-                        <div class="stat-value">0</div>
-                        <div class="stat-footer">
-                            <span class="stat-neutral">—</span>
-                            <span data-fa="اتصال فعال" data-en="Active connections">اتصال فعال</span>
-                        </div>
+                        <div class="stat-value" id="activeUsers">—</div>
+                        <div class="stat-footer">Active Connections</div>
                     </article>
 
                     <article class="stat-card">
@@ -217,11 +255,8 @@
                             <span data-fa="مصرف ترافیک" data-en="Traffic Usage">مصرف ترافیک</span>
                             <span class="stat-icon purple">⇅</span>
                         </div>
-                        <div class="stat-value">0 <small>GB</small></div>
-                        <div class="stat-footer">
-                            <span class="stat-neutral">—</span>
-                            <span data-fa="مصرف ثبت‌شده" data-en="Recorded usage">مصرف ثبت‌شده</span>
-                        </div>
+                        <div class="stat-value" id="trafficUsage">— <small>GB</small></div>
+                        <div class="stat-footer">Recorded Usage</div>
                     </article>
 
                     <article class="stat-card">
@@ -229,16 +264,12 @@
                             <span data-fa="اشتراک‌های فعال" data-en="Active Subscriptions">اشتراک‌های فعال</span>
                             <span class="stat-icon orange">▤</span>
                         </div>
-                        <div class="stat-value">0</div>
-                        <div class="stat-footer">
-                            <span class="stat-neutral">—</span>
-                            <span data-fa="اشتراک معتبر" data-en="Valid subscriptions">اشتراک معتبر</span>
-                        </div>
+                        <div class="stat-value" id="activeSubscriptions">—</div>
+                        <div class="stat-footer">Valid Subscriptions</div>
                     </article>
 
                 </div>
 
-                <!-- Main Grid -->
                 <div class="dashboard-grid">
 
                     <section class="panel-card traffic-panel">
@@ -254,10 +285,7 @@
                                 </p>
                             </div>
 
-                            <span class="live-badge">
-                                <span></span>
-                                DEMO
-                            </span>
+                            <span class="live-badge">WAITING</span>
                         </div>
 
                         <div class="traffic-placeholder">
@@ -266,9 +294,9 @@
                                     data-en="No traffic data available">
                                 داده‌ای برای نمایش وجود ندارد
                             </strong>
-                            <span data-fa="پس از اتصال سرویس ترافیک، نمودار اینجا نمایش داده می‌شود."
-                                  data-en="Traffic charts will appear here after connecting the telemetry service.">
-                                پس از اتصال سرویس ترافیک، نمودار اینجا نمایش داده می‌شود.
+                            <span data-fa="پس از اتصال سرویس ترافیک، نمودار نمایش داده می‌شود."
+                                  data-en="Traffic charts will appear after telemetry integration.">
+                                پس از اتصال سرویس ترافیک، نمودار نمایش داده می‌شود.
                             </span>
                         </div>
 
@@ -294,33 +322,27 @@
                                 <span class="system-indicator pending"></span>
                                 <div>
                                     <strong>Cloudflare Worker</strong>
-                                    <small data-fa="هنوز متصل نشده" data-en="Not connected yet">
-                                        هنوز متصل نشده
-                                    </small>
+                                    <small>API</small>
                                 </div>
-                                <span class="system-label pending-text">PENDING</span>
+                                <span class="system-label pending-text" id="workerStatus">CHECKING</span>
                             </div>
 
                             <div class="system-item">
                                 <span class="system-indicator pending"></span>
                                 <div>
                                     <strong>Cloudflare D1</strong>
-                                    <small data-fa="هنوز متصل نشده" data-en="Not connected yet">
-                                        هنوز متصل نشده
-                                    </small>
+                                    <small>Database</small>
                                 </div>
-                                <span class="system-label pending-text">PENDING</span>
+                                <span class="system-label pending-text" id="databaseStatus">CHECKING</span>
                             </div>
 
                             <div class="system-item">
                                 <span class="system-indicator pending"></span>
                                 <div>
                                     <strong>VPN Core</strong>
-                                    <small data-fa="نیازمند اتصال سرویس مستقل" data-en="External service required">
-                                        نیازمند اتصال سرویس مستقل
-                                    </small>
+                                    <small>External Service</small>
                                 </div>
-                                <span class="system-label pending-text">PENDING</span>
+                                <span class="system-label pending-text">NOT CONNECTED</span>
                             </div>
 
                         </div>
@@ -329,7 +351,6 @@
 
                 </div>
 
-                <!-- Recent Users -->
                 <section class="panel-card users-panel">
 
                     <div class="panel-header">
@@ -337,9 +358,9 @@
                             <h3 data-fa="کاربران اخیر" data-en="Recent Users">
                                 کاربران اخیر
                             </h3>
-                            <p data-fa="آخرین کاربران ثبت‌شده در پنل"
-                               data-en="Latest registered panel users">
-                                آخرین کاربران ثبت‌شده در پنل
+                            <p data-fa="آخرین کاربران ثبت‌شده"
+                               data-en="Latest registered users">
+                                آخرین کاربران ثبت‌شده
                             </p>
                         </div>
 
@@ -350,22 +371,76 @@
                     </div>
 
                     <div class="table-wrapper">
+
                         <table>
                             <thead>
                                 <tr>
-                                    <th data-fa="نام کاربر" data-en="Username">نام کاربر</th>
-                                    <th data-fa="حجم مصرفی" data-en="Usage">حجم مصرفی</th>
-                                    <th data-fa="وضعیت" data-en="Status">وضعیت</th>
-                                    <th data-fa="تاریخ ثبت" data-en="Created At">تاریخ ثبت</th>
+                                    <th>Username</th>
+                                    <th>Usage</th>
+                                    <th>Status</th>
+                                    <th>Created At</th>
                                 </tr>
                             </thead>
 
                             <tbody>
                                 <tr>
-                                    <td colspan="4" class="empty-table"
-                                        data-fa="هنوز کاربری ثبت نشده است"
-                                        data-en="No users have been registered yet">
+                                    <td colspan="4" class="empty-table">
                                         هنوز کاربری ثبت نشده است
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+
+                </section>
+
+            </section>
+
+            <!-- ====================================== -->
+            <!-- USERS -->
+            <!-- ====================================== -->
+
+            <section class="page-section" id="page-users" hidden>
+
+                <div class="page-heading">
+                    <div>
+                        <div class="eyebrow">USER MANAGEMENT</div>
+                        <h2 data-fa="مدیریت کاربران" data-en="User Management">مدیریت کاربران</h2>
+                        <p data-fa="مشاهده و مدیریت حساب‌های VPN"
+                           data-en="View and manage VPN accounts">
+                            مشاهده و مدیریت حساب‌های VPN
+                        </p>
+                    </div>
+
+                    <button class="button button-primary" data-page="create-user">
+                        ＋ ساخت کاربر
+                    </button>
+                </div>
+
+                <section class="panel-card">
+
+                    <div class="panel-header">
+                        <h3>Users List</h3>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Traffic Limit</th>
+                                    <th>Used Traffic</th>
+                                    <th>Expire Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <tr>
+                                    <td colspan="6" class="empty-table">
+                                        هنوز اطلاعات کاربری وجود ندارد.
                                     </td>
                                 </tr>
                             </tbody>
@@ -374,21 +449,353 @@
 
                 </section>
 
-                <footer class="footer">
-                    <span>© 2026 ZERYNX VPN</span>
-                    <span data-fa="ساخته‌شده برای مدیریت حرفه‌ای سرویس‌ها"
-                          data-en="Built for professional service management">
-                        ساخته‌شده برای مدیریت حرفه‌ای سرویس‌ها
-                    </span>
-                </footer>
+            </section>
+
+            <!-- ====================================== -->
+            <!-- CREATE USER -->
+            <!-- ====================================== -->
+
+            <section class="page-section" id="page-create-user" hidden>
+
+                <div class="page-heading">
+                    <div>
+                        <div class="eyebrow">CREATE VPN ACCOUNT</div>
+                        <h2 data-fa="ساخت کاربر جدید" data-en="Create New User">
+                            ساخت کاربر جدید
+                        </h2>
+                        <p data-fa="تعریف حساب جدید برای سرویس VPN"
+                           data-en="Create a new VPN account">
+                            تعریف حساب جدید برای سرویس VPN
+                        </p>
+                    </div>
+                </div>
+
+                <section class="panel-card">
+
+                    <div class="panel-header">
+                        <h3 data-fa="مشخصات کاربر" data-en="User Information">مشخصات کاربر</h3>
+                    </div>
+
+                    <div class="form-grid">
+
+                        <label>
+                            <span>Username</span>
+                            <input type="text" id="newUsername" placeholder="username">
+                        </label>
+
+                        <label>
+                            <span>Traffic Limit (GB)</span>
+                            <input type="number" id="newTrafficLimit" min="1" placeholder="50">
+                        </label>
+
+                        <label>
+                            <span>Validity (Days)</span>
+                            <input type="number" id="newValidity" min="1" placeholder="30">
+                        </label>
+
+                        <label>
+                            <span>Node</span>
+                            <select id="newNode">
+                                <option value="">Select Node</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            <span>Inbound</span>
+                            <select id="newInbound">
+                                <option value="">Select Inbound</option>
+                            </select>
+                        </label>
+
+                    </div>
+
+                    <div class="heading-actions">
+                        <button class="button button-primary" id="createUserButton">
+                            Create Account
+                        </button>
+                    </div>
+
+                    <p class="form-note">
+                        برای فعال‌شدن ساخت حساب، ابتدا باید اتصال VPN Core و API ساخت کاربر پیاده‌سازی شود.
+                    </p>
+
+                </section>
 
             </section>
 
-        </main>
+            <!-- ====================================== -->
+            <!-- INBOUNDS -->
+            <!-- ====================================== -->
 
-    </div>
+            <section class="page-section" id="page-inbounds" hidden>
 
-    <script src="assets/js/app.js"></script>
+                <div class="page-heading">
+                    <div>
+                        <div class="eyebrow">INBOUND MANAGEMENT</div>
+                        <h2 data-fa="مدیریت این‌باندها" data-en="Inbound Management">
+                            مدیریت این‌باندها
+                        </h2>
+                        <p>Manage VPN inbound configurations.</p>
+                    </div>
+                </div>
+
+                <section class="panel-card">
+                    <div class="panel-header">
+                        <h3>Inbound List</h3>
+                    </div>
+
+                    <p class="empty-table">
+                        برای نمایش این‌باندها، API و VPN Core باید متصل شوند.
+                    </p>
+                </section>
+
+            </section>
+
+            <!-- ====================================== -->
+            <!-- NODES -->
+            <!-- ====================================== -->
+
+            <section class="page-section" id="page-nodes" hidden>
+
+                <div class="page-heading">
+                    <div>
+                        <div class="eyebrow">NODE MANAGEMENT</div>
+                        <h2 data-fa="مدیریت نودها" data-en="Node Management">
+                            مدیریت نودها
+                        </h2>
+                        <p>Manage your VPN server nodes.</p>
+                    </div>
+                </div>
+
+                <section class="panel-card">
+                    <div class="panel-header">
+                        <h3>Nodes</h3>
+                    </div>
+
+                    <p class="empty-table">
+                        هنوز نودی به سیستم متصل نشده است.
+                    </p>
+                </section>
+
+            </section>
+
+            <!-- ====================================== -->
+            <!-- SUBSCRIPTIONS -->
+            <!-- ====================================== -->
+
+            <section class="page-section" id="page-subscriptions" hidden>
+
+                <div class="page-heading">
+                    <div>
+                        <div class="eyebrow">SUBSCRIPTION MANAGEMENT</div>
+                        <h2 data-fa="مدیریت اشتراک‌ها" data-en="Subscription Management">
+                            مدیریت اشتراک‌ها
+                        </h2>
+                        <p>Manage subscription links and validity.</p>
+                    </div>
+                </div>
+
+                <section class="panel-card">
+                    <div class="panel-header">
+                        <h3>Subscriptions</h3>
+                    </div>
+
+                    <p class="empty-table">
+                        هنوز اشتراکی ثبت نشده است.
+                    </p>
+                </section>
+
+            </section>
+
+            <!-- ====================================== -->
+            <!-- TRAFFIC -->
+            <!-- ====================================== -->
+
+            <section class="page-section" id="page-traffic" hidden>
+
+                <div class="page-heading">
+                    <div>
+                        <div class="eyebrow">TRAFFIC MONITOR</div>
+                        <h2 data-fa="مصرف ترافیک" data-en="Traffic Monitoring">
+                            مصرف ترافیک
+                        </h2>
+                        <p>Monitor user traffic consumption.</p>
+                    </div>
+                </div>
+
+                <section class="panel-card">
+                    <h3>Traffic Statistics</h3>
+                    <p class="empty-table">
+                        اطلاعات ترافیک پس از اتصال سرویس مانیتورینگ نمایش داده می‌شود.
+                    </p>
+                </section>
+
+            </section>
+
+            <!-- ====================================== -->
+            <!-- LOGS -->
+            <!-- ====================================== -->
+
+            <section class="page-section" id="page-logs" hidden>
+
+                <div class="page-heading">
+                    <div>
+                        <div class="eyebrow">ACTIVITY LOGS</div>
+                        <h2 data-fa="گزارش فعالیت‌ها" data-en="Activity Logs">
+                            گزارش فعالیت‌ها
+                        </h2>
+                        <p>Review system activity.</p>
+                    </div>
+                </div>
+
+                <section class="panel-card">
+                    <h3>System Logs</h3>
+                    <p class="empty-table">
+                        گزارش‌ها پس از اتصال API گزارش‌گیری نمایش داده می‌شوند.
+                    </p>
+                </section>
+
+            </section>
+
+            <!-- ====================================== -->
+            <!-- SETTINGS -->
+            <!-- ====================================== -->
+
+            <section class="page-section" id="page-settings" hidden>
+
+                <div class="page-heading">
+                    <div>
+                        <div class="eyebrow">SYSTEM SETTINGS</div>
+                        <h2 data-fa="تنظیمات سیستم" data-en="System Settings">
+                            تنظیمات سیستم
+                        </h2>
+                        <p>Configure your ZERYNX VPN panel.</p>
+                    </div>
+                </div>
+
+                <section class="panel-card">
+                    <h3>Panel Configuration</h3>
+
+                    <p class="empty-table">
+                        تنظیمات پیشرفته پس از تکمیل API اضافه خواهند شد.
+                    </p>
+                </section>
+
+            </section>
+
+            <footer class="footer">
+                <span>© 2026 ZERYNX VPN</span>
+                <span>Professional VPN Management System</span>
+            </footer>
+
+        </section>
+
+    </main>
+
+</div>
+
+<!-- BASIC PAGE NAVIGATION -->
+
+<script>
+(function () {
+
+    const pages = [
+        "dashboard",
+        "users",
+        "create-user",
+        "inbounds",
+        "nodes",
+        "subscriptions",
+        "traffic",
+        "logs",
+        "settings"
+    ];
+
+    const titles = {
+        dashboard: "داشبورد",
+        users: "مدیریت کاربران",
+        "create-user": "ساخت کاربر جدید",
+        inbounds: "مدیریت این‌باندها",
+        nodes: "مدیریت نودها",
+        subscriptions: "مدیریت اشتراک‌ها",
+        traffic: "مصرف ترافیک",
+        logs: "گزارش فعالیت‌ها",
+        settings: "تنظیمات"
+    };
+
+    function navigate(page) {
+
+        if (!pages.includes(page)) {
+            page = "dashboard";
+        }
+
+        document.querySelectorAll(".page-section").forEach(section => {
+            section.hidden = true;
+        });
+
+        const target = document.getElementById("page-" + page);
+
+        if (target) {
+            target.hidden = false;
+        }
+
+        document.querySelectorAll(".nav-item[data-page]").forEach(item => {
+            item.classList.toggle(
+                "active",
+                item.dataset.page === page
+            );
+        });
+
+        const title = document.getElementById("pageTitle");
+
+        if (title) {
+            title.textContent = titles[page];
+        }
+
+        if (location.hash !== "#" + page) {
+            history.replaceState(null, "", "#" + page);
+        }
+
+        document.getElementById("sidebar")?.classList.remove("open");
+        document.getElementById("sidebarOverlay")?.classList.remove("active");
+    }
+
+    document.addEventListener("click", function (event) {
+
+        const button = event.target.closest("[data-page]");
+
+        if (!button) return;
+
+        event.preventDefault();
+
+        navigate(button.dataset.page);
+    });
+
+    window.addEventListener("hashchange", function () {
+        navigate(location.hash.substring(1));
+    });
+
+    document.getElementById("menuToggle")?.addEventListener("click", () => {
+        document.getElementById("sidebar")?.classList.add("open");
+        document.getElementById("sidebarOverlay")?.classList.add("active");
+    });
+
+    document.getElementById("sidebarClose")?.addEventListener("click", () => {
+        document.getElementById("sidebar")?.classList.remove("open");
+        document.getElementById("sidebarOverlay")?.classList.remove("active");
+    });
+
+    document.getElementById("sidebarOverlay")?.addEventListener("click", () => {
+        document.getElementById("sidebar")?.classList.remove("open");
+        document.getElementById("sidebarOverlay")?.classList.remove("active");
+    });
+
+    navigate(location.hash.substring(1) || "dashboard");
+
+})();
+</script>
+
+<script src="assets/js/app.js"></script>
 
 </body>
 </html>
