@@ -1,13 +1,11 @@
 // ======================================================
-// ZERYNX VPN - Cloudflare Worker API
-// Version: 1.2.0
+// ZERYNX VPN - CLOUDFLARE WORKER API
+// Version: 1.4.0
 // ======================================================
 
-const VERSION = "1.2.0";
+const VERSION = "1.4.0";
 
 const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000;
-
-// Cloudflare Workers supports PBKDF2 up to 100000 iterations.
 const PASSWORD_ITERATIONS = 100000;
 
 const HEADERS = {
@@ -29,6 +27,13 @@ function response(data, status = 200, headers = {}) {
     });
 }
 
+function errorResponse(error, status = 400) {
+    return response({
+        ok: false,
+        error
+    }, status);
+}
+
 // ======================================================
 // CORS
 // ======================================================
@@ -38,7 +43,7 @@ function getOrigin(request, env) {
 
     if (!origin) return null;
 
-    const allowed = (env.ALLOWED_ORIGINS || "")
+    const allowed = String(env.ALLOWED_ORIGINS || "")
         .split(",")
         .map(value => value.trim())
         .filter(Boolean);
@@ -74,14 +79,11 @@ function withCors(result, origin) {
 }
 
 // ======================================================
-// SECURITY HELPERS
+// SECURITY
 // ======================================================
 
 function unauthorized() {
-    return response({
-        ok: false,
-        error: "UNAUTHORIZED"
-    }, 401);
+    return errorResponse("UNAUTHORIZED", 401);
 }
 
 function randomToken() {
@@ -93,16 +95,33 @@ function randomToken() {
 }
 
 async function sha256(value) {
-    const encoded = new TextEncoder().encode(value);
-
     const digest = await crypto.subtle.digest(
         "SHA-256",
-        encoded
+        new TextEncoder().encode(value)
     );
 
     return Array.from(new Uint8Array(digest))
         .map(byte => byte.toString(16).padStart(2, "0"))
         .join("");
+}
+
+function secureCompare(first, second) {
+    const encoder = new TextEncoder();
+
+    const a = encoder.encode(first);
+    const b = encoder.encode(second);
+
+    if (a.length !== b.length) {
+        return false;
+    }
+
+    let difference = 0;
+
+    for (let i = 0; i < a.length; i++) {
+        difference |= a[i] ^ b[i];
+    }
+
+    return difference === 0;
 }
 
 // ======================================================
@@ -146,12 +165,19 @@ async function verifyPassword(password, stored) {
 
         const iterations = Number(parts[1]);
 
-        // Never request more than Cloudflare Workers supports.
         if (
             !Number.isInteger(iterations) ||
             iterations < 1 ||
-            iterations > 100000
+            iterations > PASSWORD_ITERATIONS
         ) {
+            return false;
+        }
+
+        if (!/^[a-f0-9]{32}$/.test(parts[2])) {
+            return false;
+        }
+
+        if (!/^[a-f0-9]{64}$/.test(parts[3])) {
             return false;
         }
 
@@ -176,21 +202,10 @@ async function verifyPassword(password, stored) {
             .map(byte => byte.toString(16).padStart(2, "0"))
             .join("");
 
-        if (calculated.length !== parts[3].length) {
-            return false;
-        }
-
-        // Constant-time comparison.
-        let difference = 0;
-
-        for (let i = 0; i < calculated.length; i++) {
-            difference |= calculated.charCodeAt(i) ^ parts[3].charCodeAt(i);
-        }
-
-        return difference === 0;
+        return secureCompare(calculated, parts[3]);
 
     } catch (error) {
-        console.error("Password verification error:", error);
+        console.error("Password verification error:", error?.message);
         return false;
     }
 }
@@ -230,7 +245,7 @@ function sessionCookie(token, maxAge) {
 async function readJSON(request) {
     const contentType = request.headers.get("Content-Type") || "";
 
-    if (!contentType.includes("application/json")) {
+    if (!contentType.toLowerCase().includes("application/json")) {
         throw new Error("INVALID_CONTENT_TYPE");
     }
 
@@ -242,7 +257,22 @@ async function readJSON(request) {
         throw new Error("REQUEST_TOO_LARGE");
     }
 
-    return await request.json();
+    try {
+        const data = await request.json();
+
+        if (
+            !data ||
+            typeof data !== "object" ||
+            Array.isArray(data)
+        ) {
+            throw new Error("INVALID_JSON_OBJECT");
+        }
+
+        return data;
+
+    } catch {
+        throw new Error("INVALID_JSON");
+    }
 }
 
 // ======================================================
@@ -302,122 +332,76 @@ async function authenticate(request, env) {
 }
 
 // ======================================================
-// API ROUTER
+// OWNER SETUP
 // ======================================================
 
-async function handleAPI(request, env) {
-    const url = new URL(request.url);
+async function createOwner(request, env) {
+    const configuredKey = env.BOOTSTRAP_SECRET;
 
-    const path = url.pathname;
-    const method = request.method;
-
-    if (!env.DB) {
-        return response({
-            ok: false,
-            error: "DATABASE_NOT_CONFIGURED"
-        }, 503);
+    if (
+        typeof configuredKey !== "string" ||
+        configuredKey.length === 0
+    ) {
+        return errorResponse("BOOTSTRAP_NOT_CONFIGURED", 503);
     }
 
-    // --------------------------------------------------
-    // HEALTH
-    // --------------------------------------------------
+    const data = await readJSON(request);
 
-    if (method === "GET" && path === "/api/health") {
-        await env.DB.prepare("SELECT 1").first();
+    const providedKey =
+        typeof data.setupKey === "string"
+            ? data.setupKey.trim()
+            : "";
 
-        return response({
-            ok: true,
-            service: "ZERYNX VPN API",
-            version: VERSION,
-            database: "connected",
-            timestamp: new Date().toISOString()
-        });
+    if (
+        !providedKey ||
+        !secureCompare(providedKey, configuredKey.trim())
+    ) {
+        return unauthorized();
     }
 
-    // --------------------------------------------------
-    // SETUP STATUS
-    // --------------------------------------------------
+    const username = String(data.username || "").trim();
+    const password = String(data.password || "");
 
-    if (method === "GET" && path === "/api/setup/status") {
-        return response({
-            ok: true,
-            ...(await setupStatus(env))
-        });
+    if (!/^[a-zA-Z0-9_-]{3,32}$/.test(username)) {
+        return errorResponse("INVALID_USERNAME", 400);
     }
 
-    // --------------------------------------------------
-    // INITIAL OWNER SETUP
-    // --------------------------------------------------
-
-    if (method === "POST" && path === "/api/setup") {
-        if (!env.BOOTSTRAP_SECRET) {
-            return response({
-                ok: false,
-                error: "BOOTSTRAP_NOT_CONFIGURED"
-            }, 503);
-        }
-
-        const data = await readJSON(request);
-
-        if (
-            typeof data.setupKey !== "string" ||
-            data.setupKey !== env.BOOTSTRAP_SECRET
-        ) {
-            return unauthorized();
-        }
-
-        const username = String(data.username || "").trim();
-        const password = String(data.password || "");
-
-        if (!/^[a-zA-Z0-9_-]{3,32}$/.test(username)) {
-            return response({
-                ok: false,
-                error: "INVALID_USERNAME"
-            }, 400);
-        }
-
-        if (password.length < 12 || password.length > 128) {
-            return response({
-                ok: false,
-                error: "PASSWORD_MUST_BE_12_TO_128_CHARACTERS"
-            }, 400);
-        }
-
-        const result = await env.DB.prepare(
-            "SELECT COUNT(*) AS total FROM admin_users"
-        ).first();
-
-        if (Number(result?.total || 0) > 0) {
-            return response({
-                ok: false,
-                error: "ALREADY_INSTALLED"
-            }, 409);
-        }
-
-        const id = crypto.randomUUID();
-
-        const salt = randomToken().substring(0, 32);
-
-        const passwordHash = await hashPassword(
-            password,
-            salt
+    if (password.length < 12 || password.length > 128) {
+        return errorResponse(
+            "PASSWORD_MUST_BE_12_TO_128_CHARACTERS",
+            400
         );
+    }
 
-        await env.DB.prepare(`
-            INSERT INTO admin_users (
-                id,
-                username,
-                password_hash,
-                role,
-                status
-            )
-            VALUES (?, ?, ?, 'owner', 'active')
-        `).bind(
+    const result = await env.DB.prepare(
+        "SELECT COUNT(*) AS total FROM admin_users"
+    ).first();
+
+    if (Number(result?.total || 0) > 0) {
+        return errorResponse("ALREADY_INSTALLED", 409);
+    }
+
+    const id = crypto.randomUUID();
+    const salt = randomToken().substring(0, 32);
+
+    const passwordHash = await hashPassword(password, salt);
+
+    await env.DB.prepare(`
+        INSERT INTO admin_users (
             id,
             username,
-            passwordHash
-        ).run();
+            password_hash,
+            role,
+            status
+        )
+        VALUES (?, ?, ?, 'owner', 'active')
+    `).bind(
+        id,
+        username,
+        passwordHash
+    ).run();
 
+    try {
         await env.DB.prepare(`
             INSERT INTO activity_logs (
                 id,
@@ -433,15 +417,60 @@ async function handleAPI(request, env) {
             id
         ).run();
 
-        return response({
-            ok: true,
-            message: "Owner account created successfully."
-        }, 201);
+    } catch (error) {
+        console.error("Owner activity log failed:", error?.message);
     }
 
-    // --------------------------------------------------
+    return response({
+        ok: true,
+        message: "Owner account created successfully."
+    }, 201);
+}
+
+// ======================================================
+// API ROUTER
+// ======================================================
+
+async function handleAPI(request, env) {
+    const url = new URL(request.url);
+
+    const path = url.pathname;
+    const method = request.method;
+
+    if (!env.DB) {
+        return errorResponse("DATABASE_NOT_CONFIGURED", 503);
+    }
+
+    // HEALTH
+
+    if (method === "GET" && path === "/api/health") {
+        await env.DB.prepare("SELECT 1").first();
+
+        return response({
+            ok: true,
+            service: "ZERYNX VPN API",
+            version: VERSION,
+            database: "connected",
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // SETUP STATUS
+
+    if (method === "GET" && path === "/api/setup/status") {
+        return response({
+            ok: true,
+            ...(await setupStatus(env))
+        });
+    }
+
+    // INITIAL OWNER SETUP
+
+    if (method === "POST" && path === "/api/setup") {
+        return await createOwner(request, env);
+    }
+
     // LOGIN
-    // --------------------------------------------------
 
     if (method === "POST" && path === "/api/auth/login") {
         const data = await readJSON(request);
@@ -479,7 +508,6 @@ async function handleAPI(request, env) {
         }
 
         const token = randomToken();
-
         const tokenHash = await sha256(token);
 
         const expiresAt = new Date(
@@ -525,9 +553,7 @@ async function handleAPI(request, env) {
         });
     }
 
-    // --------------------------------------------------
     // LOGOUT
-    // --------------------------------------------------
 
     if (method === "POST" && path === "/api/auth/logout") {
         const token = getCookie(request, "zerynx_session");
@@ -548,9 +574,7 @@ async function handleAPI(request, env) {
         });
     }
 
-    // --------------------------------------------------
     // CURRENT ADMIN
-    // --------------------------------------------------
 
     if (method === "GET" && path === "/api/auth/me") {
         const admin = await authenticate(request, env);
@@ -567,14 +591,9 @@ async function handleAPI(request, env) {
         });
     }
 
-    // --------------------------------------------------
     // NOT FOUND
-    // --------------------------------------------------
 
-    return response({
-        ok: false,
-        error: "NOT_FOUND"
-    }, 404);
+    return errorResponse("NOT_FOUND", 404);
 }
 
 // ======================================================
@@ -585,7 +604,8 @@ export default {
     async fetch(request, env) {
         const origin = getOrigin(request, env);
 
-        // Preflight
+        // PREFLIGHT
+
         if (request.method === "OPTIONS") {
             if (!origin) {
                 return new Response(null, {
@@ -599,7 +619,8 @@ export default {
             });
         }
 
-        // Reject unauthorized browser origins.
+        // ORIGIN VALIDATION
+
         if (
             request.headers.get("Origin") &&
             !origin
@@ -621,13 +642,28 @@ export default {
                 error?.stack || error?.message || error
             );
 
-            // Important: errors also receive CORS headers.
-            const errorResponse = response({
-                ok: false,
-                error: "INTERNAL_SERVER_ERROR"
-            }, 500);
+            let message = "INTERNAL_SERVER_ERROR";
+            let status = 500;
 
-            return withCors(errorResponse, origin);
+            if (error?.message === "INVALID_CONTENT_TYPE") {
+                message = "INVALID_CONTENT_TYPE";
+                status = 415;
+            }
+
+            if (error?.message === "INVALID_JSON") {
+                message = "INVALID_JSON";
+                status = 400;
+            }
+
+            if (error?.message === "REQUEST_TOO_LARGE") {
+                message = "REQUEST_TOO_LARGE";
+                status = 413;
+            }
+
+            return withCors(
+                errorResponse(message, status),
+                origin
+            );
         }
     }
 };
