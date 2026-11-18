@@ -1,33 +1,13 @@
-# ==========================================
-# ZERYNX VPN - Cloudflare Worker Configuration
-# ==========================================
-
-# Worker service name
 name = "zerynx-vpn-panel"
-
-# Main Worker entry point
 main = "src/index.js"
-
-# Cloudflare compatibility settings
 compatibility_date = "2026-11-18"
 
-# Enable workers.dev subdomain
 workers_dev = true
-
-
-# ==========================================
-# Observability
-# ==========================================
 
 [observability]
 enabled = true
 
-
-# ==========================================
-# Cloudflare D1 Database
-# ==========================================
-
 [[d1_databases]]
 binding = "DB"
 database_name = "zerynx-vpn-db"
-database_id = "3a6487b8-bfd3-42ca-9785-ead04a2475ab"
+database_id = "0c8ad2bf-1fc8-4c8e-9b90-87c34b14346b"
