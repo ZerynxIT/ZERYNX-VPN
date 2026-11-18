@@ -1,3 +1,4 @@
+// ZERYNX VPN - Deployment verification
 const VERSION = "1.1.0";
 const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000;
 const PASSWORD_ITERATIONS = 210000;
