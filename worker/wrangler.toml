@@ -3,7 +3,7 @@
 # ==========================================
 
 # Worker service name
-name = "zerynx-vpn-api"
+name = "zerynx-vpn-panel"
 
 # Main Worker entry point
 main = "src/index.js"
