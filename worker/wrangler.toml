@@ -1,0 +1,13 @@
+name = "zerynx-vpn-api"
+main = "src/index.js"
+compatibility_date = "2026-11-18"
+
+workers_dev = true
+
+[observability]
+enabled = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "zerynx-vpn-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
