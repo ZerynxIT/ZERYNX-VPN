@@ -1,12 +1,23 @@
-// ZERYNX VPN - Deployment verification
-const VERSION = "1.1.0";
+// ======================================================
+// ZERYNX VPN - Cloudflare Worker API
+// Version: 1.2.0
+// ======================================================
+
+const VERSION = "1.2.0";
+
 const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000;
-const PASSWORD_ITERATIONS = 210000;
+
+// Cloudflare Workers supports PBKDF2 up to 100000 iterations.
+const PASSWORD_ITERATIONS = 100000;
 
 const HEADERS = {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store"
 };
+
+// ======================================================
+// RESPONSE
+// ======================================================
 
 function response(data, status = 200, headers = {}) {
     return new Response(JSON.stringify(data), {
@@ -17,6 +28,10 @@ function response(data, status = 200, headers = {}) {
         }
     });
 }
+
+// ======================================================
+// CORS
+// ======================================================
 
 function getOrigin(request, env) {
     const origin = request.headers.get("Origin");
@@ -37,9 +52,30 @@ function corsHeaders(origin) {
         "Access-Control-Allow-Credentials": "true",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Max-Age": "86400",
         "Vary": "Origin"
     };
 }
+
+function withCors(result, origin) {
+    if (!origin) return result;
+
+    const headers = new Headers(result.headers);
+
+    for (const [key, value] of Object.entries(corsHeaders(origin))) {
+        headers.set(key, value);
+    }
+
+    return new Response(result.body, {
+        status: result.status,
+        statusText: result.statusText,
+        headers
+    });
+}
+
+// ======================================================
+// SECURITY HELPERS
+// ======================================================
 
 function unauthorized() {
     return response({
@@ -69,6 +105,10 @@ async function sha256(value) {
         .join("");
 }
 
+// ======================================================
+// PASSWORD HASHING
+// ======================================================
+
 async function hashPassword(password, salt) {
     const encoder = new TextEncoder();
 
@@ -96,6 +136,8 @@ async function hashPassword(password, salt) {
 
 async function verifyPassword(password, stored) {
     try {
+        if (typeof stored !== "string") return false;
+
         const parts = stored.split("$");
 
         if (parts.length !== 4 || parts[0] !== "pbkdf2") {
@@ -104,10 +146,11 @@ async function verifyPassword(password, stored) {
 
         const iterations = Number(parts[1]);
 
+        // Never request more than Cloudflare Workers supports.
         if (
             !Number.isInteger(iterations) ||
-            iterations < 100000 ||
-            iterations > 500000
+            iterations < 1 ||
+            iterations > 100000
         ) {
             return false;
         }
@@ -133,11 +176,28 @@ async function verifyPassword(password, stored) {
             .map(byte => byte.toString(16).padStart(2, "0"))
             .join("");
 
-        return calculated === parts[3];
-    } catch {
+        if (calculated.length !== parts[3].length) {
+            return false;
+        }
+
+        // Constant-time comparison.
+        let difference = 0;
+
+        for (let i = 0; i < calculated.length; i++) {
+            difference |= calculated.charCodeAt(i) ^ parts[3].charCodeAt(i);
+        }
+
+        return difference === 0;
+
+    } catch (error) {
+        console.error("Password verification error:", error);
         return false;
     }
 }
+
+// ======================================================
+// COOKIE
+// ======================================================
 
 function getCookie(request, name) {
     const cookie = request.headers.get("Cookie") || "";
@@ -147,7 +207,9 @@ function getCookie(request, name) {
         .map(value => value.trim())
         .find(value => value.startsWith(`${name}=`));
 
-    return item ? item.substring(name.length + 1) : null;
+    return item
+        ? item.substring(name.length + 1)
+        : null;
 }
 
 function sessionCookie(token, maxAge) {
@@ -161,6 +223,10 @@ function sessionCookie(token, maxAge) {
     ].join("; ");
 }
 
+// ======================================================
+// REQUEST VALIDATION
+// ======================================================
+
 async function readJSON(request) {
     const contentType = request.headers.get("Content-Type") || "";
 
@@ -168,7 +234,9 @@ async function readJSON(request) {
         throw new Error("INVALID_CONTENT_TYPE");
     }
 
-    const length = Number(request.headers.get("Content-Length") || 0);
+    const length = Number(
+        request.headers.get("Content-Length") || 0
+    );
 
     if (length > 10000) {
         throw new Error("REQUEST_TOO_LARGE");
@@ -177,15 +245,23 @@ async function readJSON(request) {
     return await request.json();
 }
 
+// ======================================================
+// DATABASE
+// ======================================================
+
 async function setupStatus(env) {
     const result = await env.DB
         .prepare("SELECT COUNT(*) AS total FROM admin_users")
         .first();
 
     return {
-        installed: Number(result.total) > 0
+        installed: Number(result?.total || 0) > 0
     };
 }
+
+// ======================================================
+// AUTHENTICATION
+// ======================================================
 
 async function authenticate(request, env) {
     const token = getCookie(request, "zerynx_session");
@@ -225,8 +301,13 @@ async function authenticate(request, env) {
     return admin;
 }
 
+// ======================================================
+// API ROUTER
+// ======================================================
+
 async function handleAPI(request, env) {
     const url = new URL(request.url);
+
     const path = url.pathname;
     const method = request.method;
 
@@ -236,6 +317,10 @@ async function handleAPI(request, env) {
             error: "DATABASE_NOT_CONFIGURED"
         }, 503);
     }
+
+    // --------------------------------------------------
+    // HEALTH
+    // --------------------------------------------------
 
     if (method === "GET" && path === "/api/health") {
         await env.DB.prepare("SELECT 1").first();
@@ -249,12 +334,20 @@ async function handleAPI(request, env) {
         });
     }
 
+    // --------------------------------------------------
+    // SETUP STATUS
+    // --------------------------------------------------
+
     if (method === "GET" && path === "/api/setup/status") {
         return response({
             ok: true,
             ...(await setupStatus(env))
         });
     }
+
+    // --------------------------------------------------
+    // INITIAL OWNER SETUP
+    // --------------------------------------------------
 
     if (method === "POST" && path === "/api/setup") {
         if (!env.BOOTSTRAP_SECRET) {
@@ -294,7 +387,7 @@ async function handleAPI(request, env) {
             "SELECT COUNT(*) AS total FROM admin_users"
         ).first();
 
-        if (Number(result.total) > 0) {
+        if (Number(result?.total || 0) > 0) {
             return response({
                 ok: false,
                 error: "ALREADY_INSTALLED"
@@ -302,8 +395,13 @@ async function handleAPI(request, env) {
         }
 
         const id = crypto.randomUUID();
+
         const salt = randomToken().substring(0, 32);
-        const passwordHash = await hashPassword(password, salt);
+
+        const passwordHash = await hashPassword(
+            password,
+            salt
+        );
 
         await env.DB.prepare(`
             INSERT INTO admin_users (
@@ -341,6 +439,10 @@ async function handleAPI(request, env) {
         }, 201);
     }
 
+    // --------------------------------------------------
+    // LOGIN
+    // --------------------------------------------------
+
     if (method === "POST" && path === "/api/auth/login") {
         const data = await readJSON(request);
 
@@ -357,7 +459,12 @@ async function handleAPI(request, env) {
         }
 
         const admin = await env.DB.prepare(`
-            SELECT id, username, password_hash, role, status
+            SELECT
+                id,
+                username,
+                password_hash,
+                role,
+                status
             FROM admin_users
             WHERE username = ?
             LIMIT 1
@@ -372,7 +479,9 @@ async function handleAPI(request, env) {
         }
 
         const token = randomToken();
+
         const tokenHash = await sha256(token);
+
         const expiresAt = new Date(
             Date.now() + SESSION_DURATION
         ).toISOString();
@@ -416,6 +525,10 @@ async function handleAPI(request, env) {
         });
     }
 
+    // --------------------------------------------------
+    // LOGOUT
+    // --------------------------------------------------
+
     if (method === "POST" && path === "/api/auth/logout") {
         const token = getCookie(request, "zerynx_session");
 
@@ -435,6 +548,10 @@ async function handleAPI(request, env) {
         });
     }
 
+    // --------------------------------------------------
+    // CURRENT ADMIN
+    // --------------------------------------------------
+
     if (method === "GET" && path === "/api/auth/me") {
         const admin = await authenticate(request, env);
 
@@ -450,16 +567,25 @@ async function handleAPI(request, env) {
         });
     }
 
+    // --------------------------------------------------
+    // NOT FOUND
+    // --------------------------------------------------
+
     return response({
         ok: false,
         error: "NOT_FOUND"
     }, 404);
 }
 
+// ======================================================
+// MAIN WORKER
+// ======================================================
+
 export default {
     async fetch(request, env) {
         const origin = getOrigin(request, env);
 
+        // Preflight
         if (request.method === "OPTIONS") {
             if (!origin) {
                 return new Response(null, {
@@ -473,6 +599,7 @@ export default {
             });
         }
 
+        // Reject unauthorized browser origins.
         if (
             request.headers.get("Origin") &&
             !origin
@@ -486,25 +613,21 @@ export default {
         try {
             const result = await handleAPI(request, env);
 
-            if (!origin) return result;
+            return withCors(result, origin);
 
-            const headers = new Headers(result.headers);
-
-            Object.entries(corsHeaders(origin)).forEach(
-                ([key, value]) => headers.set(key, value)
+        } catch (error) {
+            console.error(
+                "ZERYNX API Error:",
+                error?.stack || error?.message || error
             );
 
-            return new Response(result.body, {
-                status: result.status,
-                headers
-            });
-        } catch (error) {
-            console.error("ZERYNX API Error:", error);
-
-            return response({
+            // Important: errors also receive CORS headers.
+            const errorResponse = response({
                 ok: false,
                 error: "INTERNAL_SERVER_ERROR"
             }, 500);
+
+            return withCors(errorResponse, origin);
         }
     }
 };
