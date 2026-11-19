@@ -32,3 +32,4 @@ jobs:
           node --check src/subscriptions.js
           node --check src/transport.js
           node --check src/wire.js
+          node --check ../assets/js/app.js
