@@ -13,8 +13,8 @@ head_sampling_rate = 1
 
 [[d1_databases]]
 binding = "DB"
-database_name = "zerynx-control-db"
-database_id = "b37344a8-891e-4e91-9fe5-5e1423d9b783"
+database_name = "zerynx-panel-db"
+database_id = "6b27d135-f1bd-430f-86d4-2292e2c525e3"
 migrations_dir = "worker/schema"
 
 [vars]
