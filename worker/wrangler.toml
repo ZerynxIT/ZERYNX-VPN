@@ -1,16 +1,16 @@
-name = "zerynx-vpn-panel"
+name = "zerynx-control"
 main = "src/index.js"
-compatibility_date = "2026-11-18"
-
+compatibility_date = "2025-11-01"
 workers_dev = true
 
 [observability]
-enabled = true
+enabled = false
 
 [[d1_databases]]
 binding = "DB"
-database_name = "zerynx-vpn-db"
-database_id = "0c8ad2bf-1fc8-4c8e-9b90-87c34b14346b"
-# Trigger new deployment
+database_name = "zerynx-control-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "schema"
+
 [vars]
 ALLOWED_ORIGINS = "https://zerynxit.github.io"

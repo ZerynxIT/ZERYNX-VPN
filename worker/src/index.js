@@ -3,14 +3,16 @@
 // Version: 1.4.0
 // ======================================================
 
-const VERSION = "1.4.0";
+import { subscriberAPI } from "./subscriptions.js";
+import { transport } from "./transport.js";
+const VERSION = "2.0.0";
 
-const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000;
+const SESSION_DURATION = 30 * 60 * 1000;
 const PASSWORD_ITERATIONS = 100000;
 
 const HEADERS = {
-    "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store"
+  "Content-Type": "application/json; charset=utf-8",
+  "Cache-Control": "no-store",
 };
 
 // ======================================================
@@ -18,20 +20,23 @@ const HEADERS = {
 // ======================================================
 
 function response(data, status = 200, headers = {}) {
-    return new Response(JSON.stringify(data), {
-        status,
-        headers: {
-            ...HEADERS,
-            ...headers
-        }
-    });
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      ...HEADERS,
+      ...headers,
+    },
+  });
 }
 
 function errorResponse(error, status = 400) {
-    return response({
-        ok: false,
-        error
-    }, status);
+  return response(
+    {
+      ok: false,
+      error,
+    },
+    status,
+  );
 }
 
 // ======================================================
@@ -39,43 +44,43 @@ function errorResponse(error, status = 400) {
 // ======================================================
 
 function getOrigin(request, env) {
-    const origin = request.headers.get("Origin");
+  const origin = request.headers.get("Origin");
 
-    if (!origin) return null;
+  if (!origin) return null;
 
-    const allowed = String(env.ALLOWED_ORIGINS || "")
-        .split(",")
-        .map(value => value.trim())
-        .filter(Boolean);
+  const allowed = String(env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
 
-    return allowed.includes(origin) ? origin : null;
+  return allowed.includes(origin) ? origin : null;
 }
 
 function corsHeaders(origin) {
-    return {
-        "Access-Control-Allow-Origin": origin,
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Max-Age": "86400",
-        "Vary": "Origin"
-    };
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+    Vary: "Origin",
+  };
 }
 
 function withCors(result, origin) {
-    if (!origin) return result;
+  if (!origin) return result;
 
-    const headers = new Headers(result.headers);
+  const headers = new Headers(result.headers);
 
-    for (const [key, value] of Object.entries(corsHeaders(origin))) {
-        headers.set(key, value);
-    }
+  for (const [key, value] of Object.entries(corsHeaders(origin))) {
+    headers.set(key, value);
+  }
 
-    return new Response(result.body, {
-        status: result.status,
-        statusText: result.statusText,
-        headers
-    });
+  return new Response(result.body, {
+    status: result.status,
+    statusText: result.statusText,
+    headers,
+  });
 }
 
 // ======================================================
@@ -83,45 +88,45 @@ function withCors(result, origin) {
 // ======================================================
 
 function unauthorized() {
-    return errorResponse("UNAUTHORIZED", 401);
+  return errorResponse("UNAUTHORIZED", 401);
 }
 
 function randomToken() {
-    const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
 
-    return Array.from(bytes)
-        .map(byte => byte.toString(16).padStart(2, "0"))
-        .join("");
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 async function sha256(value) {
-    const digest = await crypto.subtle.digest(
-        "SHA-256",
-        new TextEncoder().encode(value)
-    );
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
 
-    return Array.from(new Uint8Array(digest))
-        .map(byte => byte.toString(16).padStart(2, "0"))
-        .join("");
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function secureCompare(first, second) {
-    const encoder = new TextEncoder();
+  const encoder = new TextEncoder();
 
-    const a = encoder.encode(first);
-    const b = encoder.encode(second);
+  const a = encoder.encode(first);
+  const b = encoder.encode(second);
 
-    if (a.length !== b.length) {
-        return false;
-    }
+  if (a.length !== b.length) {
+    return false;
+  }
 
-    let difference = 0;
+  let difference = 0;
 
-    for (let i = 0; i < a.length; i++) {
-        difference |= a[i] ^ b[i];
-    }
+  for (let i = 0; i < a.length; i++) {
+    difference |= a[i] ^ b[i];
+  }
 
-    return difference === 0;
+  return difference === 0;
 }
 
 // ======================================================
@@ -129,85 +134,92 @@ function secureCompare(first, second) {
 // ======================================================
 
 async function hashPassword(password, salt) {
-    const encoder = new TextEncoder();
+  const encoder = new TextEncoder();
 
-    const key = await crypto.subtle.importKey(
-        "raw",
-        encoder.encode(password),
-        "PBKDF2",
-        false,
-        ["deriveBits"]
-    );
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"],
+  );
 
-    const bits = await crypto.subtle.deriveBits({
-        name: "PBKDF2",
-        salt: encoder.encode(salt),
-        iterations: PASSWORD_ITERATIONS,
-        hash: "SHA-256"
-    }, key, 256);
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: encoder.encode(salt),
+      iterations: PASSWORD_ITERATIONS,
+      hash: "SHA-256",
+    },
+    key,
+    256,
+  );
 
-    const hash = Array.from(new Uint8Array(bits))
-        .map(byte => byte.toString(16).padStart(2, "0"))
-        .join("");
+  const hash = Array.from(new Uint8Array(bits))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 
-    return `pbkdf2$${PASSWORD_ITERATIONS}$${salt}$${hash}`;
+  return `pbkdf2$${PASSWORD_ITERATIONS}$${salt}$${hash}`;
 }
 
 async function verifyPassword(password, stored) {
-    try {
-        if (typeof stored !== "string") return false;
+  try {
+    if (typeof stored !== "string") return false;
 
-        const parts = stored.split("$");
+    const parts = stored.split("$");
 
-        if (parts.length !== 4 || parts[0] !== "pbkdf2") {
-            return false;
-        }
-
-        const iterations = Number(parts[1]);
-
-        if (
-            !Number.isInteger(iterations) ||
-            iterations < 1 ||
-            iterations > PASSWORD_ITERATIONS
-        ) {
-            return false;
-        }
-
-        if (!/^[a-f0-9]{32}$/.test(parts[2])) {
-            return false;
-        }
-
-        if (!/^[a-f0-9]{64}$/.test(parts[3])) {
-            return false;
-        }
-
-        const encoder = new TextEncoder();
-
-        const key = await crypto.subtle.importKey(
-            "raw",
-            encoder.encode(password),
-            "PBKDF2",
-            false,
-            ["deriveBits"]
-        );
-
-        const bits = await crypto.subtle.deriveBits({
-            name: "PBKDF2",
-            salt: encoder.encode(parts[2]),
-            iterations,
-            hash: "SHA-256"
-        }, key, 256);
-
-        const calculated = Array.from(new Uint8Array(bits))
-            .map(byte => byte.toString(16).padStart(2, "0"))
-            .join("");
-
-        return secureCompare(calculated, parts[3]);
-
-    } catch (error) {
-        console.error("Password verification error:", error?.message);
-        return false;
+    if (parts.length !== 4 || parts[0] !== "pbkdf2") {
+      return false;
     }
+
+    const iterations = Number(parts[1]);
+
+    if (
+      !Number.isInteger(iterations) ||
+      iterations < 1 ||
+      iterations > PASSWORD_ITERATIONS
+    ) {
+      return false;
+    }
+
+    if (!/^[a-f0-9]{32}$/.test(parts[2])) {
+      return false;
+    }
+
+    if (!/^[a-f0-9]{64}$/.test(parts[3])) {
+      return false;
+    }
+
+    const encoder = new TextEncoder();
+
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(password),
+      "PBKDF2",
+      false,
+      ["deriveBits"],
+    );
+
+    const bits = await crypto.subtle.deriveBits(
+      {
+        name: "PBKDF2",
+        salt: encoder.encode(parts[2]),
+        iterations,
+        hash: "SHA-256",
+      },
+      key,
+      256,
+    );
+
+    const calculated = Array.from(new Uint8Array(bits))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+
+    return secureCompare(calculated, parts[3]);
+  } catch (error) {
+    console.error("Password verification error:", error?.message);
+    return false;
+  }
 }
 
 // ======================================================
@@ -215,27 +227,25 @@ async function verifyPassword(password, stored) {
 // ======================================================
 
 function getCookie(request, name) {
-    const cookie = request.headers.get("Cookie") || "";
+  const cookie = request.headers.get("Cookie") || "";
 
-    const item = cookie
-        .split(";")
-        .map(value => value.trim())
-        .find(value => value.startsWith(`${name}=`));
+  const item = cookie
+    .split(";")
+    .map((value) => value.trim())
+    .find((value) => value.startsWith(`${name}=`));
 
-    return item
-        ? item.substring(name.length + 1)
-        : null;
+  return item ? item.substring(name.length + 1) : null;
 }
 
 function sessionCookie(token, maxAge) {
-    return [
-        `zerynx_session=${token}`,
-        "HttpOnly",
-        "Secure",
-        "SameSite=None",
-        "Path=/",
-        `Max-Age=${maxAge}`
-    ].join("; ");
+  return [
+    `zerynx_session=${token}`,
+    "HttpOnly",
+    "Secure",
+    "SameSite=None",
+    "Path=/",
+    `Max-Age=${maxAge}`,
+  ].join("; ");
 }
 
 // ======================================================
@@ -243,36 +253,29 @@ function sessionCookie(token, maxAge) {
 // ======================================================
 
 async function readJSON(request) {
-    const contentType = request.headers.get("Content-Type") || "";
+  const contentType = request.headers.get("Content-Type") || "";
 
-    if (!contentType.toLowerCase().includes("application/json")) {
-        throw new Error("INVALID_CONTENT_TYPE");
+  if (!contentType.toLowerCase().includes("application/json")) {
+    throw new Error("INVALID_CONTENT_TYPE");
+  }
+
+  const length = Number(request.headers.get("Content-Length") || 0);
+
+  if (length > 10000) {
+    throw new Error("REQUEST_TOO_LARGE");
+  }
+
+  try {
+    const data = await request.json();
+
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      throw new Error("INVALID_JSON_OBJECT");
     }
 
-    const length = Number(
-        request.headers.get("Content-Length") || 0
-    );
-
-    if (length > 10000) {
-        throw new Error("REQUEST_TOO_LARGE");
-    }
-
-    try {
-        const data = await request.json();
-
-        if (
-            !data ||
-            typeof data !== "object" ||
-            Array.isArray(data)
-        ) {
-            throw new Error("INVALID_JSON_OBJECT");
-        }
-
-        return data;
-
-    } catch {
-        throw new Error("INVALID_JSON");
-    }
+    return data;
+  } catch {
+    throw new Error("INVALID_JSON");
+  }
 }
 
 // ======================================================
@@ -280,13 +283,13 @@ async function readJSON(request) {
 // ======================================================
 
 async function setupStatus(env) {
-    const result = await env.DB
-        .prepare("SELECT COUNT(*) AS total FROM admin_users")
-        .first();
+  const result = await env.DB.prepare(
+    "SELECT COUNT(*) AS total FROM admin_users",
+  ).first();
 
-    return {
-        installed: Number(result?.total || 0) > 0
-    };
+  return {
+    installed: Number(result?.total || 0) > 0,
+  };
 }
 
 // ======================================================
@@ -294,15 +297,16 @@ async function setupStatus(env) {
 // ======================================================
 
 async function authenticate(request, env) {
-    const token = getCookie(request, "zerynx_session");
+  const token = request.headers.get("Authorization")?.replace(/^Bearer /, "");
 
-    if (!token || !/^[a-f0-9]{64}$/.test(token)) {
-        return null;
-    }
+  if (!token || !/^[a-f0-9]{64}$/.test(token)) {
+    return null;
+  }
 
-    const tokenHash = await sha256(token);
+  const tokenHash = await sha256(token);
 
-    const admin = await env.DB.prepare(`
+  const admin = await env.DB.prepare(
+    `
         SELECT
             a.id,
             a.username,
@@ -314,21 +318,24 @@ async function authenticate(request, env) {
         JOIN admin_users a ON a.id = s.admin_id
         WHERE s.session_hash = ?
         LIMIT 1
-    `).bind(tokenHash).first();
+    `,
+  )
+    .bind(tokenHash)
+    .first();
 
-    if (!admin || admin.status !== "active") {
-        return null;
-    }
+  if (!admin || admin.status !== "active") {
+    return null;
+  }
 
-    if (Date.parse(admin.expires_at) <= Date.now()) {
-        await env.DB.prepare(
-            "DELETE FROM admin_sessions WHERE id = ?"
-        ).bind(admin.session_id).run();
+  if (Date.parse(admin.expires_at) <= Date.now()) {
+    await env.DB.prepare("DELETE FROM admin_sessions WHERE id = ?")
+      .bind(admin.session_id)
+      .run();
 
-        return null;
-    }
+    return null;
+  }
 
-    return admin;
+  return admin;
 }
 
 // ======================================================
@@ -336,57 +343,47 @@ async function authenticate(request, env) {
 // ======================================================
 
 async function createOwner(request, env) {
-    const configuredKey = env.BOOTSTRAP_SECRET;
+  const configuredKey = env.BOOTSTRAP_SECRET;
 
-    if (
-        typeof configuredKey !== "string" ||
-        configuredKey.length === 0
-    ) {
-        return errorResponse("BOOTSTRAP_NOT_CONFIGURED", 503);
-    }
+  if (typeof configuredKey !== "string" || configuredKey.length === 0) {
+    return errorResponse("BOOTSTRAP_NOT_CONFIGURED", 503);
+  }
 
-    const data = await readJSON(request);
+  const data = await readJSON(request);
 
-    const providedKey =
-        typeof data.setupKey === "string"
-            ? data.setupKey.trim()
-            : "";
+  const providedKey =
+    typeof data.setupKey === "string" ? data.setupKey.trim() : "";
 
-    if (
-        !providedKey ||
-        !secureCompare(providedKey, configuredKey.trim())
-    ) {
-        return unauthorized();
-    }
+  if (!providedKey || !secureCompare(providedKey, configuredKey.trim())) {
+    return unauthorized();
+  }
 
-    const username = String(data.username || "").trim();
-    const password = String(data.password || "");
+  const username = String(data.username || "").trim();
+  const password = String(data.password || "");
 
-    if (!/^[a-zA-Z0-9_-]{3,32}$/.test(username)) {
-        return errorResponse("INVALID_USERNAME", 400);
-    }
+  if (!/^[a-zA-Z0-9_-]{3,32}$/.test(username)) {
+    return errorResponse("INVALID_USERNAME", 400);
+  }
 
-    if (password.length < 12 || password.length > 128) {
-        return errorResponse(
-            "PASSWORD_MUST_BE_12_TO_128_CHARACTERS",
-            400
-        );
-    }
+  if (password.length < 12 || password.length > 128) {
+    return errorResponse("PASSWORD_MUST_BE_12_TO_128_CHARACTERS", 400);
+  }
 
-    const result = await env.DB.prepare(
-        "SELECT COUNT(*) AS total FROM admin_users"
-    ).first();
+  const result = await env.DB.prepare(
+    "SELECT COUNT(*) AS total FROM admin_users",
+  ).first();
 
-    if (Number(result?.total || 0) > 0) {
-        return errorResponse("ALREADY_INSTALLED", 409);
-    }
+  if (Number(result?.total || 0) > 0) {
+    return errorResponse("ALREADY_INSTALLED", 409);
+  }
 
-    const id = crypto.randomUUID();
-    const salt = randomToken().substring(0, 32);
+  const id = crypto.randomUUID();
+  const salt = randomToken().substring(0, 32);
 
-    const passwordHash = await hashPassword(password, salt);
+  const passwordHash = await hashPassword(password, salt);
 
-    await env.DB.prepare(`
+  await env.DB.prepare(
+    `
         INSERT INTO admin_users (
             id,
             username,
@@ -395,14 +392,14 @@ async function createOwner(request, env) {
             status
         )
         VALUES (?, ?, ?, 'owner', 'active')
-    `).bind(
-        id,
-        username,
-        passwordHash
-    ).run();
+    `,
+  )
+    .bind(id, username, passwordHash)
+    .run();
 
-    try {
-        await env.DB.prepare(`
+  try {
+    await env.DB.prepare(
+      `
             INSERT INTO activity_logs (
                 id,
                 actor_type,
@@ -412,19 +409,21 @@ async function createOwner(request, env) {
                 target_id
             )
             VALUES (?, 'system', NULL, 'OWNER_CREATED', 'admin', ?)
-        `).bind(
-            crypto.randomUUID(),
-            id
-        ).run();
+        `,
+    )
+      .bind(crypto.randomUUID(), id)
+      .run();
+  } catch (error) {
+    console.error("Owner activity log failed:", error?.message);
+  }
 
-    } catch (error) {
-        console.error("Owner activity log failed:", error?.message);
-    }
-
-    return response({
-        ok: true,
-        message: "Owner account created successfully."
-    }, 201);
+  return response(
+    {
+      ok: true,
+      message: "Owner account created successfully.",
+    },
+    201,
+  );
 }
 
 // ======================================================
@@ -432,62 +431,63 @@ async function createOwner(request, env) {
 // ======================================================
 
 async function handleAPI(request, env) {
-    const url = new URL(request.url);
+  const url = new URL(request.url);
 
-    const path = url.pathname;
-    const method = request.method;
+  const path = url.pathname;
+  const method = request.method;
 
-    if (!env.DB) {
-        return errorResponse("DATABASE_NOT_CONFIGURED", 503);
+  if (!env.DB) {
+    return errorResponse("DATABASE_NOT_CONFIGURED", 503);
+  }
+
+  // HEALTH
+
+  if (method === "GET" && path === "/api/health") {
+    await env.DB.prepare("SELECT 1").first();
+
+    return response({
+      ok: true,
+      service: "ZERYNX VPN API",
+      version: VERSION,
+      database: "connected",
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // SETUP STATUS
+
+  if (method === "GET" && path === "/api/setup/status") {
+    return response({
+      ok: true,
+      ...(await setupStatus(env)),
+    });
+  }
+
+  // INITIAL OWNER SETUP
+
+  if (method === "POST" && path === "/api/setup") {
+    return await createOwner(request, env);
+  }
+
+  // LOGIN
+
+  if (method === "POST" && path === "/api/auth/login") {
+    const data = await readJSON(request);
+
+    const username = String(data.username || "").trim();
+    const password = String(data.password || "");
+
+    if (
+      username.length > 32 ||
+      password.length > 128 ||
+      !username ||
+      !password
+    ) {
+      return unauthorized();
     }
 
-    // HEALTH
-
-    if (method === "GET" && path === "/api/health") {
-        await env.DB.prepare("SELECT 1").first();
-
-        return response({
-            ok: true,
-            service: "ZERYNX VPN API",
-            version: VERSION,
-            database: "connected",
-            timestamp: new Date().toISOString()
-        });
-    }
-
-    // SETUP STATUS
-
-    if (method === "GET" && path === "/api/setup/status") {
-        return response({
-            ok: true,
-            ...(await setupStatus(env))
-        });
-    }
-
-    // INITIAL OWNER SETUP
-
-    if (method === "POST" && path === "/api/setup") {
-        return await createOwner(request, env);
-    }
-
-    // LOGIN
-
-    if (method === "POST" && path === "/api/auth/login") {
-        const data = await readJSON(request);
-
-        const username = String(data.username || "").trim();
-        const password = String(data.password || "");
-
-        if (
-            username.length > 32 ||
-            password.length > 128 ||
-            !username ||
-            !password
-        ) {
-            return unauthorized();
-        }
-
-        const admin = await env.DB.prepare(`
+    const admin = await env.DB.prepare(
+      `
             SELECT
                 id,
                 username,
@@ -497,24 +497,26 @@ async function handleAPI(request, env) {
             FROM admin_users
             WHERE username = ?
             LIMIT 1
-        `).bind(username).first();
+        `,
+    )
+      .bind(username)
+      .first();
 
-        if (
-            !admin ||
-            admin.status !== "active" ||
-            !(await verifyPassword(password, admin.password_hash))
-        ) {
-            return unauthorized();
-        }
+    if (
+      !admin ||
+      admin.status !== "active" ||
+      !(await verifyPassword(password, admin.password_hash))
+    ) {
+      return unauthorized();
+    }
 
-        const token = randomToken();
-        const tokenHash = await sha256(token);
+    const token = randomToken();
+    const tokenHash = await sha256(token);
 
-        const expiresAt = new Date(
-            Date.now() + SESSION_DURATION
-        ).toISOString();
+    const expiresAt = new Date(Date.now() + SESSION_DURATION).toISOString();
 
-        await env.DB.prepare(`
+    await env.DB.prepare(
+      `
             INSERT INTO admin_sessions (
                 id,
                 admin_id,
@@ -522,78 +524,126 @@ async function handleAPI(request, env) {
                 expires_at
             )
             VALUES (?, ?, ?, ?)
-        `).bind(
-            crypto.randomUUID(),
-            admin.id,
-            tokenHash,
-            expiresAt
-        ).run();
+        `,
+    )
+      .bind(crypto.randomUUID(), admin.id, tokenHash, expiresAt)
+      .run();
 
-        await env.DB.prepare(`
+    await env.DB.prepare(
+      `
             UPDATE admin_users
             SET last_login_at = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        `).bind(
-            new Date().toISOString(),
-            admin.id
-        ).run();
+        `,
+    )
+      .bind(new Date().toISOString(), admin.id)
+      .run();
 
-        return response({
-            ok: true,
-            admin: {
-                id: admin.id,
-                username: admin.username,
-                role: admin.role
-            }
-        }, 200, {
-            "Set-Cookie": sessionCookie(
-                token,
-                SESSION_DURATION / 1000
-            )
-        });
+    return response({
+      ok: true,
+      admin: {
+        id: admin.id,
+        username: admin.username,
+        role: admin.role,
+      },
+      token,
+    });
+  }
+
+  // LOGOUT
+
+  if (method === "POST" && path === "/api/auth/logout") {
+    const token = request.headers.get("Authorization")?.replace(/^Bearer /, "");
+
+    if (token && /^[a-f0-9]{64}$/.test(token)) {
+      const tokenHash = await sha256(token);
+
+      await env.DB.prepare("DELETE FROM admin_sessions WHERE session_hash = ?")
+        .bind(tokenHash)
+        .run();
     }
 
-    // LOGOUT
+    return response(
+      {
+        ok: true,
+        message: "Logged out.",
+      },
+      200,
+      {
+        "Set-Cookie": sessionCookie("", 0),
+      },
+    );
+  }
 
-    if (method === "POST" && path === "/api/auth/logout") {
-        const token = getCookie(request, "zerynx_session");
+  // CURRENT ADMIN
 
-        if (token && /^[a-f0-9]{64}$/.test(token)) {
-            const tokenHash = await sha256(token);
+  if (method === "GET" && path === "/api/auth/me") {
+    const admin = await authenticate(request, env);
 
-            await env.DB.prepare(
-                "DELETE FROM admin_sessions WHERE session_hash = ?"
-            ).bind(tokenHash).run();
-        }
+    if (!admin) return unauthorized();
 
-        return response({
-            ok: true,
-            message: "Logged out."
-        }, 200, {
-            "Set-Cookie": sessionCookie("", 0)
-        });
+    return response({
+      ok: true,
+      admin: {
+        id: admin.id,
+        username: admin.username,
+        role: admin.role,
+      },
+    });
+  }
+
+  if (path === "/api/credentials" && method === "POST") {
+    const admin = await authenticate(request, env);
+    if (!admin || admin.role !== "owner") return unauthorized();
+    const { current, username, password } = await readJSON(request);
+    if (
+      typeof password !== "string" ||
+      password.length < 12 ||
+      password.length > 128 ||
+      typeof username !== "string" ||
+      !/^[a-zA-Z0-9_-]{3,32}$/.test(username)
+    )
+      return errorResponse("INVALID_INPUT");
+    const old = await env.DB.prepare(
+      "SELECT password_hash FROM admin_users WHERE id=?",
+    )
+      .bind(admin.id)
+      .first();
+    if (
+      typeof current !== "string" ||
+      !(await verifyPassword(current, old.password_hash))
+    )
+      return unauthorized();
+    await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE admin_users SET username=?,password_hash=? WHERE id=?",
+      ).bind(
+        username,
+        await hashPassword(password, randomToken().slice(0, 32)),
+        admin.id,
+      ),
+      env.DB.prepare("DELETE FROM admin_sessions WHERE admin_id=?").bind(
+        admin.id,
+      ),
+    ]);
+    return response({ ok: true });
+  }
+  if (path.startsWith("/s/") || path.startsWith("/api/users")) {
+    if (!path.startsWith("/s/")) {
+      const admin = await authenticate(request, env);
+      if (!admin || admin.role !== "owner") return unauthorized();
     }
+    return subscriberAPI(request, env, {
+      sha256,
+      randomToken,
+      readJSON,
+      response,
+      errorResponse,
+    });
+  }
+  // NOT FOUND
 
-    // CURRENT ADMIN
-
-    if (method === "GET" && path === "/api/auth/me") {
-        const admin = await authenticate(request, env);
-
-        if (!admin) return unauthorized();
-
-        return response({
-            ok: true,
-            admin: {
-                id: admin.id,
-                username: admin.username,
-                role: admin.role
-            }
-        });
-    }
-
-    // NOT FOUND
-
-    return errorResponse("NOT_FOUND", 404);
+  return errorResponse("NOT_FOUND", 404);
 }
 
 // ======================================================
@@ -601,69 +651,67 @@ async function handleAPI(request, env) {
 // ======================================================
 
 export default {
-    async fetch(request, env) {
-        const origin = getOrigin(request, env);
+  async fetch(request, env) {
+    if (new URL(request.url).pathname === "/stream")
+      return transport(request, env);
+    const origin = getOrigin(request, env);
 
-        // PREFLIGHT
+    // PREFLIGHT
 
-        if (request.method === "OPTIONS") {
-            if (!origin) {
-                return new Response(null, {
-                    status: 403
-                });
-            }
+    if (request.method === "OPTIONS") {
+      if (!origin) {
+        return new Response(null, {
+          status: 403,
+        });
+      }
 
-            return new Response(null, {
-                status: 204,
-                headers: corsHeaders(origin)
-            });
-        }
-
-        // ORIGIN VALIDATION
-
-        if (
-            request.headers.get("Origin") &&
-            !origin
-        ) {
-            return response({
-                ok: false,
-                error: "ORIGIN_NOT_ALLOWED"
-            }, 403);
-        }
-
-        try {
-            const result = await handleAPI(request, env);
-
-            return withCors(result, origin);
-
-        } catch (error) {
-            console.error(
-                "ZERYNX API Error:",
-                error?.stack || error?.message || error
-            );
-
-            let message = "INTERNAL_SERVER_ERROR";
-            let status = 500;
-
-            if (error?.message === "INVALID_CONTENT_TYPE") {
-                message = "INVALID_CONTENT_TYPE";
-                status = 415;
-            }
-
-            if (error?.message === "INVALID_JSON") {
-                message = "INVALID_JSON";
-                status = 400;
-            }
-
-            if (error?.message === "REQUEST_TOO_LARGE") {
-                message = "REQUEST_TOO_LARGE";
-                status = 413;
-            }
-
-            return withCors(
-                errorResponse(message, status),
-                origin
-            );
-        }
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders(origin),
+      });
     }
+
+    // ORIGIN VALIDATION
+
+    if (request.headers.get("Origin") && !origin) {
+      return response(
+        {
+          ok: false,
+          error: "ORIGIN_NOT_ALLOWED",
+        },
+        403,
+      );
+    }
+
+    try {
+      const result = await handleAPI(request, env);
+
+      return withCors(result, origin);
+    } catch (error) {
+      console.error(
+        "ZERYNX API Error:",
+        error?.stack || error?.message || error,
+      );
+
+      let message = "INTERNAL_SERVER_ERROR";
+      let status = 500;
+
+      if (error?.message === "INVALID_CONTENT_TYPE") {
+        message = "INVALID_CONTENT_TYPE";
+        status = 415;
+      }
+
+      if (error?.message === "INVALID_JSON") {
+        message = "INVALID_JSON";
+        status = 400;
+      }
+
+      if (error?.message === "REQUEST_TOO_LARGE") {
+        message = "REQUEST_TOO_LARGE";
+        status = 413;
+      }
+
+      return withCors(errorResponse(message, status), origin);
+    }
+  },
 };
