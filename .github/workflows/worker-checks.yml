@@ -35,6 +35,10 @@ jobs:
           node --check ../assets/js/app.js
           node --check public/assets/js/app.js
 
-      - name: Validate Worker deployment bundle
+      - name: Validate Worker deployment bundle (worker config)
         working-directory: worker
         run: npx wrangler deploy --dry-run
+
+      - name: Validate production root Wrangler configuration
+        working-directory: worker
+        run: npx wrangler deploy --dry-run --config ../wrangler.toml
