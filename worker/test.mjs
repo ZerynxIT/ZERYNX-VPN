@@ -53,6 +53,28 @@ const mf = {
   dispose: () => sqlite.close(),
 };
 try {
+  const health = await mf.dispatchFetch("https://test.example/api/health");
+  assert.equal(health.status, 200);
+  assert.deepEqual(await health.json().then((v) => ({
+    ok: v.ok,
+    service: v.service,
+    database: v.database,
+  })), {
+    ok: true,
+    service: "ZERYNX VPN API",
+    database: "connected",
+  });
+  const missingDB = await worker.fetch(
+    new Request("https://test.example/api/health"),
+    {},
+  );
+  assert.equal(missingDB.status, 503);
+  assert.equal((await missingDB.json()).database, "not_configured");
+  assert.equal(
+    (await mf.dispatchFetch("https://test.example/stream")).status,
+    426,
+  );
+
   let token = "";
   const api = (p, d) =>
     mf.dispatchFetch("https://test.example" + p, {
