@@ -1,4 +1,4 @@
-name = "zerynx-control"
+name = "zerynx-vpn"
 main = "src/index.js"
 compatibility_date = "2025-11-01"
 workers_dev = true
