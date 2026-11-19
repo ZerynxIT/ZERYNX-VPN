@@ -2,9 +2,14 @@ name = "zerynx-vpn"
 main = "src/index.js"
 compatibility_date = "2025-11-01"
 workers_dev = true
+upload_source_maps = true
 
 [observability]
-enabled = false
+enabled = true
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
 
 [[d1_databases]]
 binding = "DB"
