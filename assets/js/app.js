@@ -3,7 +3,7 @@ const $ = (s) => document.querySelector(s),
   dlg = $("#dialog"),
   fields = $("#fields"),
   form = $("#form");
-let api = "",
+let api = localStorage.getItem("zerynx_api") || "",
   token = "",
   users = [],
   view = "home",
@@ -96,6 +96,9 @@ function connect() {
         throw Error("فقط نشانی اصلی HTTPS ورکر را وارد کنید.");
       clear();
       api = u.origin;
+      localStorage.setItem("zerynx_api", api);
+      const health = await call("/api/health");
+      if (!health.ok) throw Error("Worker پاسخ سالمی برنگرداند.");
       const status = await call("/api/setup/status");
       login(!status.installed);
     },
@@ -286,3 +289,14 @@ document.addEventListener("click", async (e) => {
   }
 });
 render();
+if (api) {
+  call("/api/health")
+    .then((health) => {
+      if (health.ok) {
+        $("#connect").textContent = "اتصال برقرار · ورود مدیر";
+      }
+    })
+    .catch(() => {
+      $("#connect").textContent = "بررسی اتصال Worker";
+    });
+}
