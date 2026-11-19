@@ -230,8 +230,19 @@ form.onsubmit = async (e) => {
   }
 };
 $("#close").onclick = () => dlg.close();
-$("#connect").onclick = () => {
-  if (!token) return connect();
+$("#connect").onclick = async () => {
+  if (!token) {
+    if (!api) return connect();
+    try {
+      await call("/api/health");
+      const status = await call("/api/setup/status");
+      login(!status.installed);
+    } catch (error) {
+      notify(error.message, "error");
+      connect();
+    }
+    return;
+  }
   modal(
     "خروج مدیر",
     "<p>نشست فعلی پایان می‌یابد.</p>",
@@ -293,7 +304,7 @@ if (api) {
   call("/api/health")
     .then((health) => {
       if (health.ok) {
-        $("#connect").textContent = "اتصال برقرار · ورود مدیر";
+        $("#connect").textContent = "ورود مدیر";
       }
     })
     .catch(() => {
