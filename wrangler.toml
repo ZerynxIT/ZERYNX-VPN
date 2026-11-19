@@ -1,0 +1,25 @@
+# ZERYNX — single Cloudflare Worker: panel + API + subscription + relay.
+name = "zerynx-vpn"
+main = "worker/src/index.js"
+compatibility_date = "2025-11-01"
+workers_dev = true
+
+[observability]
+enabled = true
+
+# Static panel files (worker/public). The Worker runs first so API/sub/relay routes win.
+[assets]
+directory = "worker/public"
+binding = "ASSETS"
+run_worker_first = true
+
+# D1 database. Replace database_id with YOUR database id (Cloudflare > D1 > your DB > Overview).
+# Tables (zx_*) are created automatically on first request, no migrations needed.
+[[d1_databases]]
+binding = "DB"
+database_name = "zerynx-panel-db"
+database_id = "PASTE-YOUR-D1-DATABASE-ID-HERE"
+
+# Optional: helper proxy for sites hosted behind Cloudflare. Can also be set from the panel (Settings).
+# [vars]
+# PROXY_IP = ""
