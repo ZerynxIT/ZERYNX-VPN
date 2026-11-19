@@ -70,6 +70,27 @@ try {
   );
   assert.equal(missingDB.status, 503);
   assert.equal((await missingDB.json()).database, "not_configured");
+
+  // Static assets must still be served when D1 is not configured.
+  const assetEnv = {
+    ASSETS: {
+      fetch: async (request) =>
+        new Response("asset:" + new URL(request.url).pathname),
+    },
+  };
+  const assetRoot = await worker.fetch(
+    new Request("https://test.example/"),
+    assetEnv,
+  );
+  assert.equal(assetRoot.status, 200);
+  assert.equal(await assetRoot.text(), "asset:/");
+  const assetFile = await worker.fetch(
+    new Request("https://test.example/assets/js/app.js"),
+    assetEnv,
+  );
+  assert.equal(assetFile.status, 200);
+  assert.equal(await assetFile.text(), "asset:/assets/js/app.js");
+
   assert.equal(
     (await mf.dispatchFetch("https://test.example/stream")).status,
     426,
