@@ -16,7 +16,7 @@ const worker = (await import("./src/index.js")).default;
 import { charge, parseHeader } from "./src/wire.js";
 const sqlite = new DatabaseSync(":memory:");
 sqlite.exec(
-  readFileSync(new URL("./schema/schema.sql", import.meta.url), "utf8"),
+  readFileSync(new URL("./schema/0001_initial.sql", import.meta.url), "utf8"),
 );
 const db = {
   prepare(q) {
