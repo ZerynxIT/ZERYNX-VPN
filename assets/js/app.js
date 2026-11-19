@@ -1,313 +1,35 @@
-const $ = (s) => document.querySelector(s),
-  box = $("#content"),
-  dlg = $("#dialog"),
-  fields = $("#fields"),
-  form = $("#form");
-let api = localStorage.getItem("zerynx_api") || "",
-  token = "",
-  users = [],
-  view = "home",
-  account = "",
-  handler;
-const esc = (s) =>
-  String(s).replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ],
-  );
-const num = (n) =>
-  Number(n).toLocaleString("fa-IR", { maximumFractionDigits: 2 });
-const labels = {
-  home: "داشبورد",
-  users: "کاربران و اشتراک‌ها",
-  settings: "تنظیمات",
-};
-function clear() {
-  token = "";
-  account = "";
-  users = [];
-  render();
-}
-async function call(path, body) {
-  let r;
-  try {
-    r = await fetch(api + path, {
-      method: body ? "POST" : "GET",
-      headers: {
-        ...(body ? { "Content-Type": "application/json" } : {}),
-        ...(token ? { Authorization: "Bearer " + token } : {}),
-      },
-      ...(body ? { body: JSON.stringify(body) } : {}),
-      signal: AbortSignal.timeout(15000),
-      referrerPolicy: "no-referrer",
-      cache: "no-store",
-    });
-  } catch {
-    throw Error("ورکر پاسخ نداد. آدرس و مجوز دامنهٔ پنل را بررسی کنید.");
-  }
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) {
-    if (r.status === 401 && token) clear();
-    throw Error(
-      {
-        UNAUTHORIZED: "اطلاعات ورود یا کلید نصب درست نیست.",
-        DUPLICATE: "این نام قبلاً استفاده شده است.",
-        INVALID_INPUT: "نام، حجم و مدت اعتبار را بررسی کنید.",
-      }[d.error] ||
-        d.error ||
-        "درخواست ناموفق بود.",
-    );
-  }
-  return d;
-}
-function modal(title, html, action, label = "تأیید") {
-  form.reset();
-  $("#title").textContent = title;
-  fields.innerHTML = html;
-  $("#error").textContent = "";
-  $("#submit").textContent = label;
-  handler = action;
-  if (!dlg.open) dlg.showModal();
-  (fields.querySelector("input") || $("#submit")).focus();
-}
-const input = (name, title, type = "text", attrs = "") =>
-  `<label>${title}<input name="${name}" type="${type}" required ${attrs}></label>`;
-function connect() {
-  modal(
-    "اتصال به Cloudflare Worker",
-    input(
-      "address",
-      "نشانی HTTPS ورکر",
-      "url",
-      `value="${esc(api)}" placeholder="https://your-worker.workers.dev"`,
-    ),
-    async (d) => {
-      const u = new URL(d.address);
-      if (
-        u.protocol !== "https:" ||
-        u.username ||
-        u.password ||
-        u.pathname !== "/" ||
-        u.search ||
-        u.hash
-      )
-        throw Error("فقط نشانی اصلی HTTPS ورکر را وارد کنید.");
-      clear();
-      api = u.origin;
-      localStorage.setItem("zerynx_api", api);
-      const health = await call("/api/health");
-      if (!health.ok) throw Error("Worker پاسخ سالمی برنگرداند.");
-      const status = await call("/api/setup/status");
-      login(!status.installed);
-    },
-    "بررسی اتصال",
-  );
-}
-function login(setup = false) {
-  modal(
-    setup ? "راه‌اندازی مدیر" : "ورود مدیر",
-    input(
-      "username",
-      "نام کاربری",
-      "text",
-      'value="admin" pattern="[a-zA-Z0-9_\\-]{3,32}"',
-    ) +
-      input(
-        "password",
-        setup ? "رمز جدید (۱۲ تا ۱۲۸ نویسه)" : "رمز عبور",
-        "password",
-        setup
-          ? 'minlength="12" maxlength="128" autocomplete="new-password"'
-          : 'autocomplete="current-password"',
-      ) +
-      (setup ? input("setupKey", "کلید نصب یک‌بارمصرف", "password") : ""),
-    async (d) => {
-      if (setup) await call("/api/setup", d);
-      const a = await call("/api/auth/login", {
-        username: d.username,
-        password: d.password,
-      });
-      token = a.token;
-      account = a.admin.username;
-      await refresh();
-      dlg.close();
-    },
-    setup ? "ثبت مدیر و ورود" : "ورود",
-  );
-}
-async function refresh() {
-  users = (await call("/api/users")).users;
-  render();
-}
-function issue(link) {
-  modal(
-    "اشتراک آماده است",
-    `<p>این لینک خصوصی است؛ آن را فقط به صاحب اشتراک بدهید.</p><label>لینک اشتراک<input readonly value="${esc(link)}"></label>`,
-    async () => {
-      await navigator.clipboard.writeText(link);
-      dlg.close();
-      $("#message").textContent = "لینک اشتراک کپی شد.";
-    },
-    "کپی لینک",
-  );
-}
-function create() {
-  if (!token) return connect();
-  modal(
-    "ساخت اشتراک",
-    input("username", "نام کاربر", "text", 'pattern="[a-zA-Z0-9_\\-]{3,32}"') +
-      input(
-        "gb",
-        "حجم (گیگابایت)",
-        "number",
-        'min="0.001" max="10000" step="0.001" value="10"',
-      ) +
-      input("days", "اعتبار (روز)", "number", 'min="1" max="3650" value="30"'),
-    async (d) => {
-      const r = await call("/api/users", {
-        ...d,
-        gb: Number(d.gb),
-        days: Number(d.days),
-      });
-      await refresh();
-      issue(r.link);
-    },
-    "ساخت و دریافت لینک",
-  );
-}
-function render() {
-  const alive = (u) =>
-    u.status === "active" &&
-    Date.parse(u.expires_at) > Date.now() &&
-    u.used_bytes < u.quota_bytes;
-  $("#connect").textContent = token ? account + " · خروج" : "اتصال به ورکر";
-  $("#section").textContent = labels[view];
-  document
-    .querySelectorAll("[data-view]")
-    .forEach((b) =>
-      b.setAttribute(
-        "aria-current",
-        b.dataset.view === view ? "page" : "false",
-      ),
-    );
-  const stats = [
-    ["کل کاربران", "USR", users.length],
-    ["اشتراک فعال", "SUB", users.filter(alive).length],
-    ["مصرف • GB", "NET", users.reduce((n, u) => n + u.used_bytes, 0) / 1e9],
-  ];
-  let html =
-    view === "home"
-      ? `<div class="stats">${stats.map(([a, b, c]) => `<div class="stat"><span>${a}</span><i>${b}</i><b>${token ? num(c) : "—"}</b></div>`).join("")}</div>`
-      : "";
-  if (view === "settings")
-    html += `<section class="panel"><small>WORKSPACE / SETTINGS</small><h2>تنظیمات اتصال</h2><p>${esc(api || "هنوز ورکری متصل نیست.")}</p><button data-action="connect" class="outline">تنظیم اتصال</button> ${token ? '<button data-action="credentials">تغییر مشخصات مدیر</button>' : ""}</section>`;
-  else
-    html += `<section class="panel"><div class="row"><div><small>SUBSCRIPTION DIRECTORY</small><h2>${view === "home" ? "آخرین اشتراک‌ها" : "فهرست اشتراک‌ها"}</h2></div><button class="outline" data-action="${token ? "refresh" : "connect"}">${token ? "تازه‌سازی" : "اتصال"}</button></div>${
-      !users.length
-        ? `<div class="empty">${token ? "هنوز اشتراکی نساخته‌اید." : "برای مشاهدهٔ اشتراک‌ها، ورکر خود را متصل کنید."}</div>`
-        : `<div class="table"><table><thead><tr><th>کاربر</th><th>مصرف / سقف GB</th><th>انقضا</th><th>وضعیت</th><th>مدیریت</th></tr></thead><tbody>${users
-            .slice(0, view === "home" ? 5 : undefined)
-            .map(
-              (u) =>
-                `<tr><td>${esc(u.username)}</td><td>${num(u.used_bytes / 1e9)} / ${num(u.quota_bytes / 1e9)}</td><td>${new Date(u.expires_at).toLocaleDateString("fa-IR")}</td><td>${alive(u) ? "فعال" : "غیرفعال"}</td><td><button data-id="${esc(u.id)}" data-action="rotate" class="outline">لینک جدید</button> <button data-id="${esc(u.id)}" data-action="toggle" class="outline">${u.status === "active" ? "تعلیق" : "فعال‌سازی"}</button></td></tr>`,
-            )
-            .join("")}</tbody></table></div>`
-    }</section>`;
-  box.innerHTML = html;
-}
-form.onsubmit = async (e) => {
-  e.preventDefault();
-  const b = $("#submit");
-  b.disabled = true;
-  try {
-    await handler(Object.fromEntries(new FormData(form)));
-  } catch (e) {
-    $("#error").textContent = e.message;
-  } finally {
-    b.disabled = false;
-  }
-};
-$("#close").onclick = () => dlg.close();
-$("#connect").onclick = async () => {
-  if (!token) {
-    if (!api) return connect();
-    try {
-      await call("/api/health");
-      const status = await call("/api/setup/status");
-      login(!status.installed);
-    } catch (error) {
-      notify(error.message, "error");
-      connect();
-    }
-    return;
-  }
-  modal(
-    "خروج مدیر",
-    "<p>نشست فعلی پایان می‌یابد.</p>",
-    async () => {
-      await call("/api/auth/logout", {});
-      clear();
-      dlg.close();
-    },
-    "خروج",
-  );
-};
-document.addEventListener("click", async (e) => {
-  const b = e.target.closest("button");
-  if (!b) return;
-  if (b.dataset.view) {
-    view = b.dataset.view;
-    render();
-    return;
-  }
-  const a = b.dataset.action;
-  try {
-    if (a === "connect") connect();
-    if (a === "create") create();
-    if (a === "refresh") await refresh();
-    if (a === "credentials")
-      modal(
-        "تغییر مشخصات مدیر",
-        input("current", "رمز فعلی", "password") +
-          input("username", "نام جدید", "text", `value="${esc(account)}"`) +
-          input(
-            "password",
-            "رمز جدید",
-            "password",
-            'minlength="12" maxlength="128"',
-          ),
-        async (d) => {
-          await call("/api/credentials", d);
-          clear();
-          login();
-        },
-      );
-    if (["rotate", "toggle"].includes(a))
-      modal(
-        a === "rotate" ? "جایگزینی لینک قبلی" : "تغییر وضعیت اشتراک",
-        "<p>این تغییر روی دسترسی کاربر اثر می‌گذارد.</p>",
-        async () => {
-          const r = await call("/api/users/" + b.dataset.id + "/" + a, {});
-          await refresh();
-          if (r.link) issue(r.link);
-          else dlg.close();
-        },
-      );
-  } catch (e) {
-    $("#message").textContent = e.message;
-  }
-});
+const $ = (s) => document.querySelector(s);
+const box=$("#content"),dlg=$("#dialog"),form=$("#form"),fields=$("#fields");
+let api=localStorage.getItem("zerynx_api")||"",token="",account="",users=[],view="home",activity=[],handler=null,toastTimer;
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=v=>Number(v||0).toLocaleString("fa-IR",{maximumFractionDigits:2});
+const date=v=>v?new Date(v).toLocaleDateString("fa-IR"):"—";
+const active=u=>u.status==="active"&&Date.parse(u.expires_at)>Date.now()&&Number(u.used_bytes)<Number(u.quota_bytes);
+const labels={home:["نمای کلی","OVERVIEW"],users:["کاربران و اشتراک‌ها","SUBSCRIBERS"],activity:["رویدادهای سیستم","ACTIVITY LOG"],settings:["تنظیمات پنل","SETTINGS"]};
+function notify(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2800)}
+function modal(title,html,fn,label="تأیید"){form.reset();$("#modal-title").textContent=title;fields.innerHTML=html;$("#error").textContent="";$("#submit").textContent=label;handler=fn;dlg.showModal();fields.querySelector("input")?.focus()}
+const input=(name,title,type="text",attrs="")=>`<label>${title}<input name="${name}" type="${type}" required ${attrs}></label>`;
+async function call(path,body){let r;try{r=await fetch(api+path,{method:body?"POST":"GET",headers:{...(body?{"Content-Type":"application/json"}:{}),...(token?{Authorization:"Bearer "+token}:{})},body:body?JSON.stringify(body):undefined,cache:"no-store",referrerPolicy:"no-referrer",signal:AbortSignal.timeout(15000)})}catch{throw Error("ارتباط با Worker برقرار نشد؛ آدرس و وضعیت سرویس را بررسی کن.")}const d=await r.json().catch(()=>({}));if(!r.ok){if(r.status===401&&token){token="";account="";render()}throw Error(({UNAUTHORIZED:"ورود ناموفق یا نشست منقضی شده است.",DUPLICATE:"این نام کاربری قبلاً ثبت شده است.",INVALID_INPUT:"اطلاعات واردشده معتبر نیست.",BOOTSTRAP_NOT_CONFIGURED:"Secret نصب روی Worker تنظیم نشده است."})[d.error]||d.error||"درخواست ناموفق بود.")}return d}
+function connect(){modal("اتصال به Cloudflare Worker",input("address","آدرس اصلی HTTPS ورکر","url",`value="${esc(api)}" placeholder="https://your-worker.workers.dev"`),async d=>{const u=new URL(d.address);if(u.protocol!=="https:"||u.pathname!=="/"||u.search||u.hash)throw Error("فقط آدرس اصلی HTTPS را وارد کن.");api=u.origin;localStorage.setItem("zerynx_api",api);const h=await call("/api/health");if(!h.ok)throw Error("Worker سالم نیست.");const s=await call("/api/setup/status");dlg.close();login(!s.installed)},"بررسی و ادامه")}
+function login(setup=false){modal(setup?"ساخت حساب مالک":"ورود مدیر",input("username","نام کاربری","text",'value="admin" pattern="[a-zA-Z0-9_-]{3,32}"')+input("password",setup?"رمز جدید (حداقل ۱۲ نویسه)":"رمز عبور","password",setup?'minlength="12" maxlength="128"':'autocomplete="current-password"')+(setup?input("setupKey","کلید نصب یک‌بارمصرف","password"):""),async d=>{if(setup)await call("/api/setup",d);const a=await call("/api/auth/login",{username:d.username,password:d.password});token=a.token;account=a.admin.username;dlg.close();await refresh();notify("ورود موفقیت‌آمیز بود.")},setup?"ثبت مالک و ورود":"ورود به پنل")}
+async function refresh(){if(!token)return;const d=await call("/api/users");users=d.users||[];if(view==="activity")await loadActivity();render()}
+async function loadActivity(){try{activity=(await call("/api/activity")).items||[]}catch{activity=[]}}
+function issue(link){modal("لینک اشتراک آماده است",`<p class="subtext">این لینک خصوصی است؛ فقط در اختیار صاحب اشتراک قرار بده.</p>${input("link","Subscription URL","text",`readonly value="${esc(link)}"`) }`,async()=>{await navigator.clipboard.writeText(link);dlg.close();notify("لینک اشتراک کپی شد.")},"کپی لینک")}
+function createUser(){modal("ایجاد اشتراک جدید",input("username","شناسه کاربر","text",'pattern="[a-zA-Z0-9_-]{3,32}" placeholder="user_001"')+input("gb","حجم (GB)","number",'min="0.001" max="10000" step="0.001" value="10"')+input("days","اعتبار (روز)","number",'min="1" max="3650" value="30"'),async d=>{const r=await call("/api/users",{username:d.username,gb:Number(d.gb),days:Number(d.days)});await refresh();issue(r.link)},"ساخت اشتراک")}
+function stats(){const used=users.reduce((n,u)=>n+Number(u.used_bytes),0),quota=users.reduce((n,u)=>n+Number(u.quota_bytes),0);return [["کل کاربران","♙",users.length,"ثبت‌شده در پنل"],["اشتراک فعال","◉",users.filter(active).length,"دارای اعتبار و حجم"],["مصرف کل","⇅",(used/1e9).toFixed(3)+" GB","مجموع ترافیک ثبت‌شده"],["حجم تخصیص‌یافته","◫",(quota/1e9).toFixed(2)+" GB","سقف مجموع اشتراک‌ها"]]}
+function statCards(){return `<div class="stats">${stats().map(([t,i,v,s])=>`<article class="stat"><div class="stat-top"><span>${t}</span><b class="stat-icon">${i}</b></div><strong>${fmt(v)}</strong><small>${s}</small></article>`).join("")}</div>`}
+function userRows(list){if(!list.length)return '<div class="empty">هنوز کاربری ثبت نشده است.</div>';return `<div class="table-wrap"><table><thead><tr><th>کاربر</th><th>مصرف / حجم</th><th>انقضا</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>${list.map(u=>`<tr><td><b class="user-name">${esc(u.username)}</b><span class="subtext">${esc(u.id.slice(0,8))}</span></td><td>${fmt(Number(u.used_bytes)/1e9)} / ${fmt(Number(u.quota_bytes)/1e9)} GB</td><td>${date(u.expires_at)}</td><td><span class="badge ${active(u)?"ok":u.status==="disabled"?"off":"warn"}">${active(u)?"فعال":u.status==="disabled"?"تعلیق":"پایان‌یافته"}</span></td><td><div class="actions"><button class="mini" data-act="rotate" data-id="${esc(u.id)}">لینک جدید</button><button class="mini" data-act="toggle" data-id="${esc(u.id)}">${u.status==="active"?"تعلیق":"فعال‌سازی"}</button></div></td></tr>`).join("")}</tbody></table></div>`}
+function chart(){const vals=Array.from({length:7},(_,i)=>users.filter(u=>{const d=new Date(u.created_at||Date.now());return d.getDate()===new Date(Date.now()-((6-i)*86400000)).getDate()}).length);const max=Math.max(1,...vals);return `<div class="chart">${vals.map((v,i)=>`<div class="bar-wrap"><div class="bar" style="height:${Math.max(4,v/max*90)}%"></div><small>${["ش","ی","د","س","چ","پ","ج"][i]}</small></div>`).join("")}</div>`}
+function dashboard(){const used=users.reduce((n,u)=>n+Number(u.used_bytes),0),quota=users.reduce((n,u)=>n+Number(u.quota_bytes),0);return `<section class="welcome"><div class="welcome-copy"><small class="eyebrow">NETWORK OPERATIONS / ZERYNX</small><h2>مرکز فرماندهی <em>ZERYNX</em></h2><p>مدیریت اشتراک‌ها، کاربران و ترافیک از یک پنل یکپارچه.</p></div><div class="welcome-actions"><button class="btn primary" data-act="create">＋ ساخت اشتراک</button><button class="btn ghost" data-act="refresh">↻ بروزرسانی</button></div></section>${statCards()}<div class="grid-two"><section class="card"><div class="card-head"><div><h3>نمای ترافیک و ظرفیت</h3><p>آمار تجمعی اشتراک‌های ثبت‌شده</p></div><span class="tag">LIVE DATA</span></div><div class="usage-line"><span>مصرف ثبت‌شده</span><b>${(used/1e9).toFixed(3)} GB</b></div><div class="usage-line"><span>ظرفیت کل</span><b>${(quota/1e9).toFixed(3)} GB</b></div><div class="usage-line"><span>درصد مصرف</span><b>${quota?((used/quota)*100).toFixed(1):"0"}%</b></div>${chart()}</section><section class="card"><div class="card-head"><div><h3>وضعیت سرویس</h3><p>وضعیت اتصال پنل و موتور</p></div><span class="badge ok">متصل</span></div><div class="usage-line"><span>API Worker</span><b>پاسخ‌گو</b></div><div class="usage-line"><span>دیتابیس</span><b>D1</b></div><div class="usage-line"><span>پروتکل فعلی</span><b>VLESS / WS / TLS</b></div><div class="usage-line"><span>پورت‌های TCP</span><b>80 · 443</b></div><p class="subtext">این نسخه انتقال TCP را ارائه می‌کند؛ پشتیبانی UDP و Mux در موتور موجود نیست.</p></section></div><section class="card"><div class="card-head"><div><h3>آخرین اشتراک‌ها</h3><p>آخرین کاربران ایجادشده</p></div><button class="mini" data-view="users">مشاهده همه ←</button></div>${userRows(users.slice(0,6))}</section>`}
+function usersPage(){return `<div class="toolbar"><div><h2>کاربران و اشتراک‌ها</h2><p>ساخت، مدیریت و کنترل دسترسی کاربران</p></div><button class="btn primary" data-act="create">＋ اشتراک جدید</button></div><section class="card"><input class="search" id="search" placeholder="جستجوی نام کاربر…"><div id="user-list" style="margin-top:14px">${userRows(users)}</div></section>`}
+function activityPage(){return `<div class="toolbar"><div><h2>رویدادهای سیستم</h2><p>گزارش فعالیت‌های مدیریتی ثبت‌شده در دیتابیس</p></div><button class="btn ghost" data-act="refresh">↻ بروزرسانی</button></div><section class="card">${activity.length?'<div class="table-wrap"><table><thead><tr><th>رویداد</th><th>نوع هدف</th><th>شناسه</th><th>زمان</th></tr></thead><tbody>'+activity.map(a=>`<tr><td>${esc(a.action)}</td><td>${esc(a.target_type||"—")}</td><td>${esc((a.target_id||"—").slice(0,12))}</td><td>${date(a.created_at)}</td></tr>`).join("")+'</tbody></table></div>':'<div class="empty">هنوز رویدادی ثبت نشده یا API گزارش در نسخه فعلی در دسترس نیست.</div>'}</section>`}
+function settingsPage(){return `<div class="toolbar"><div><h2>تنظیمات پنل</h2><p>اتصال، امنیت و مشخصات سرویس</p></div></div><div class="settings-grid"><section class="card"><div class="card-head"><h3>اتصال به موتور</h3><span class="badge ok">متصل</span></div><div class="setting-row"><span>Worker endpoint</span><b dir="ltr">${esc(api)}</b></div><div class="setting-row"><span>دیتابیس</span><b>D1 / Connected</b></div><div class="setting-row"><span>نسخه API</span><b>2.0.0</b></div><button class="btn ghost" data-act="connect" style="margin-top:15px">تغییر آدرس Worker</button></section><section class="card"><div class="card-head"><h3>امنیت حساب مدیر</h3><span class="tag">OWNER</span></div><p class="subtext">برای حفظ امنیت، رمز عبور باید حداقل ۱۲ نویسه داشته باشد.</p><button class="btn primary" data-act="credentials">تغییر نام کاربری و رمز</button><div class="setting-row"><span>نشست فعلی</span><b>۳۰ دقیقه</b></div><div class="setting-row"><span>ذخیره توکن</span><b>فقط حافظه تب</b></div></section></div>`}
+function render(){const [title,crumb]=labels[view];$("#page-title").textContent=title;$("#crumb").textContent=crumb;$("#account-label").textContent=token?account:"اتصال به Worker";document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));box.innerHTML=token?(view==="home"?dashboard():view==="users"?usersPage():view==="activity"?activityPage():settingsPage()):`<section class="welcome"><div class="welcome-copy"><small class="eyebrow">ZERYNX / AUTHENTICATION</small><h2>به پنل مدیریت <em>ZERYNX</em> خوش آمدی</h2><p>برای مشاهده داشبورد و مدیریت اشتراک‌ها، ابتدا Worker را متصل کن.</p></div><button class="btn primary" data-act="connect">اتصال و ورود</button></section>`; }
+form.addEventListener("submit",async e=>{e.preventDefault();if(!handler)return;const b=$("#submit");b.disabled=true;try{await handler(Object.fromEntries(new FormData(form)))}catch(err){$("#error").textContent=err.message}finally{b.disabled=false}});
+$("#close").onclick=()=>dlg.close();$("#cancel").onclick=()=>dlg.close();$("#connect").onclick=()=>token?modal("خروج از حساب","<p>از نشست مدیریتی خارج می‌شوی.</p>",async()=>{await call("/api/auth/logout",{});token="";account="";dlg.close();render();notify("خروج انجام شد.")},"خروج"):api?loginOrConnect():connect();
+async function loginOrConnect(){try{const h=await call("/api/health");const s=await call("/api/setup/status");login(!s.installed)}catch{connect()}}
+$("#menu").onclick=()=>$("#sidebar").classList.toggle("open");
+document.addEventListener("click",async e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.view){view=b.dataset.view;$("#sidebar").classList.remove("open");if(view==="activity"&&token)await loadActivity();render();return}const a=b.dataset.act;try{if(a==="connect")connect();if(a==="create")createUser();if(a==="refresh"){await refresh();notify("اطلاعات بروزرسانی شد.")}if(a==="credentials")modal("تغییر مشخصات مدیر",input("current","رمز فعلی","password")+input("username","نام کاربری جدید","text",`value="${esc(account)}"`)+input("password","رمز جدید (حداقل ۱۲ نویسه)","password",'minlength="12" maxlength="128"'),async d=>{await call("/api/credentials",d);token="";account="";dlg.close();login();},"ذخیره تغییرات");if(["rotate","toggle"].includes(a))modal(a==="rotate"?"تولید لینک جدید":"تغییر وضعیت اشتراک","<p>این عملیات روی دسترسی صاحب اشتراک اثر می‌گذارد.</p>",async()=>{const r=await call("/api/users/"+b.dataset.id+"/"+a,{});await refresh();dlg.close();if(r.link)issue(r.link);else notify("وضعیت اشتراک تغییر کرد.")}, "تأیید");}catch(err){notify(err.message)}});
+document.addEventListener("input",e=>{if(e.target.id==="search"){const q=e.target.value.toLowerCase();$("#user-list").innerHTML=userRows(users.filter(u=>u.username.toLowerCase().includes(q))) }});
 render();
-if (api) {
-  call("/api/health")
-    .then((health) => {
-      if (health.ok) {
-        $("#connect").textContent = "ورود مدیر";
-      }
-    })
-    .catch(() => {
-      $("#connect").textContent = "بررسی اتصال Worker";
-    });
-}
+if(api)call("/api/health").then(h=>{if(h.ok)$("#account-label").textContent="ورود مدیر"}).catch(()=>{$("#account-label").textContent="بررسی Worker"});
