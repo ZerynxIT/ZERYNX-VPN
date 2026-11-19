@@ -620,6 +620,15 @@ async function handleAPI(request, env) {
     ]);
     return response({ ok: true });
   }
+  if (method === "GET" && path === "/api/activity") {
+    const admin = await authenticate(request, env);
+    if (!admin || admin.role !== "owner") return unauthorized();
+    const result = await env.DB.prepare(
+      "SELECT id, action, target_type, target_id, created_at FROM activity_logs ORDER BY created_at DESC, rowid DESC LIMIT 50",
+    ).all();
+    return response({ items: result.results || [] });
+  }
+
   if (path.startsWith("/s/") || path.startsWith("/api/users")) {
     if (!path.startsWith("/s/")) {
       const admin = await authenticate(request, env);
