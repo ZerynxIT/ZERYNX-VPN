@@ -12,7 +12,13 @@ export async function subscriberAPI(
   const url = new URL(req.url),
     p = url.pathname;
   const link = (t) => `${url.origin}/s/${t}`;
-  const log = (action, targetId) => DB.prepare("INSERT INTO activity_logs (id, actor_type, action, target_type, target_id) VALUES (?, 'admin', ?, 'user', ?)").bind(crypto.randomUUID(), action, targetId).run();
+  const log = async (action, targetId) => {
+    try {
+      await DB.prepare("INSERT INTO activity_logs (id, actor_type, action, target_type, target_id) VALUES (?, 'admin', ?, 'user', ?)")
+        .bind(crypto.randomUUID(), action, targetId)
+        .run();
+    } catch {}
+  };
   if (p.startsWith("/s/") && req.method === "GET") {
     const key = p.slice(3);
     if (!/^[a-f0-9]{64}$/.test(key)) return errorResponse("NOT_FOUND", 404);
@@ -100,7 +106,7 @@ export async function subscriberAPI(
       if (String(e).includes("UNIQUE")) return errorResponse("DUPLICATE", 409);
       throw e;
     }
-    await log("SUBSCRIPTION_CREATED", id).catch(() => {});
+    await log("SUBSCRIPTION_CREATED", id);
     return response({ link: link(t) }, 201);
   }
   const m = p.match(/^\/api\/users\/([a-f0-9-]{36})\/(rotate|toggle)$/);
@@ -119,7 +125,7 @@ export async function subscriberAPI(
             .bind(m[1])
             .run();
     if (!r.meta.changes) return errorResponse("NOT_FOUND", 404);
-    await log(m[2] === "rotate" ? "SUBSCRIPTION_LINK_ROTATED" : "USER_STATUS_CHANGED", m[1]).catch(() => {});
+    await log(m[2] === "rotate" ? "SUBSCRIPTION_LINK_ROTATED" : "USER_STATUS_CHANGED", m[1]);
     return response(m[2] === "rotate" ? { link: link(t) } : { ok: true });
   }
   return errorResponse("NOT_FOUND", 404);
