@@ -1,0 +1,21 @@
+name = "zerynx-vpn"
+main = "worker/src/index.js"
+compatibility_date = "2025-11-01"
+workers_dev = true
+
+[observability]
+enabled = false
+
+[[d1_databases]]
+binding = "DB"
+database_name = "zerynx-control-db"
+database_id = "b37344a8-891e-4e91-9fe5-5e1423d9b783"
+migrations_dir = "worker/schema"
+
+[vars]
+ALLOWED_ORIGINS = "https://zerynxit.github.io"
+
+[assets]
+directory = "worker/public"
+binding = "ASSETS"
+run_worker_first = true
