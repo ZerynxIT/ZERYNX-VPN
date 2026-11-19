@@ -1,56 +1,38 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="theme-color" content="#080e19" />
-    <meta name="robots" content="noindex,nofollow" />
-    <title>زرینیکس | مرکز کنترل شبکه</title>
-    <link rel="icon" href="./assets/z.svg" />
-    <link rel="stylesheet" href="./assets/css/app.css" />
-    <script type="module" src="./assets/js/app.js"></script>
-  </head>
-  <body>
-    <header>
-      <div class="brand" dir="ltr">
-        <img src="./assets/z.svg" width="34" height="34" alt="" /><b>ZERYNX</b
-        ><span>CONTROL CENTER</span>
-      </div>
-      <button id="connect" class="outline">اتصال به ورکر</button>
-    </header>
-    <main>
-      <div class="crumb">
-        <span>فضای مدیریت</span> / <strong id="section">داشبورد</strong>
-      </div>
-      <section class="hero">
-        <div class="hero-copy">
-          <small dir="ltr">ZERYNX / NETWORK OPERATIONS</small>
-          <h1>مرکز کنترل شبکه</h1>
-          <p>مدیریت کاربران، ترافیک و اشتراک‌های زرینیکس</p>
-          <button data-action="create">＋ ساخت اشتراک</button>
-        </div>
-      </section>
-      <nav aria-label="مدیریت پنل">
-        <button data-view="home" aria-current="page">داشبورد</button
-        ><button data-view="users">کاربران و اشتراک‌ها</button
-        ><button data-view="settings">تنظیمات</button>
-      </nav>
-      <div id="content"></div>
-      <p id="message" role="status"></p>
-    </main>
-    <footer>
-      <span>© ZERYNX SYSTEMS</span><span>LEARN · BUILD · PROTECT</span>
-    </footer>
-    <dialog id="dialog">
-      <form id="form">
-        <div class="dlghead">
-          <h2 id="title"></h2>
-          <button type="button" id="close" aria-label="بستن">×</button>
-        </div>
-        <div id="fields"></div>
-        <p id="error" role="alert"></p>
-        <button id="submit">ادامه</button>
-      </form>
-    </dialog>
-  </body>
-</html>
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080e19"><meta name="robots" content="noindex,nofollow">
+<title>ZERYNX VPN | Control Center</title>
+<link rel="icon" href="./assets/z.svg"><link rel="stylesheet" href="./assets/css/app.css">
+<script type="module" src="./assets/js/app.js"></script>
+</head>
+<body>
+<header>
+  <div class="brand" dir="ltr"><img src="./assets/z.svg" width="36" height="36" alt=""><b>ZERYNX</b><span>VPN CONTROL</span></div>
+  <button id="connect" class="outline">اتصال به Worker</button>
+</header>
+<main>
+  <div class="crumb"><span>فضای مدیریت</span><span>/</span><strong id="section">داشبورد</strong></div>
+  <section class="hero">
+    <div class="hero-copy">
+      <small dir="ltr">NETWORK OPERATIONS CENTER</small>
+      <h1>مرکز کنترل <em>ZERYNX</em></h1>
+      <p>مدیریت کاربران، ترافیک و اشتراک‌های شبکه در یک فضای یکپارچه.</p>
+      <button data-action="create">＋ ساخت اشتراک جدید</button>
+    </div>
+    <div class="hero-mark" aria-hidden="true"><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div><div class="core-mark">Z</div></div>
+  </section>
+  <nav aria-label="مدیریت پنل">
+    <button data-view="home" aria-current="page">داشبورد</button>
+    <button data-view="users">کاربران و اشتراک‌ها</button>
+    <button data-view="settings">تنظیمات</button>
+  </nav>
+  <div id="content"></div><p id="message" role="status"></p>
+</main>
+<footer><span>© ZERYNX SYSTEMS</span><span>LEARN · BUILD · PROTECT</span></footer>
+<dialog id="dialog"><form id="form">
+  <div class="dlghead"><div><small>ZERYNX CONTROL</small><h2 id="title"></h2></div><button type="button" id="close" aria-label="بستن">×</button></div>
+  <div id="fields"></div><p id="error" role="alert"></p><button id="submit">ادامه</button>
+</form></dialog>
+</body></html>
