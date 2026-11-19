@@ -14,3 +14,8 @@ migrations_dir = "schema"
 
 [vars]
 ALLOWED_ORIGINS = "https://zerynxit.github.io"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
