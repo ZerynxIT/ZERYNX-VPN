@@ -1,7 +1,6 @@
-import { connect } from "cloudflare:sockets";
 import { active } from "./subscriptions.js";
 import { parseHeader, charge } from "./wire.js";
-export function transport(req, env) {
+export async function transport(req, env) {
   if (
     req.method !== "GET" ||
     req.headers.get("Upgrade")?.toLowerCase() !== "websocket"
@@ -9,6 +8,10 @@ export function transport(req, env) {
     return new Response(null, { status: 426 });
   if (req.headers.has("Sec-WebSocket-Protocol"))
     return new Response("Early data is not supported", { status: 400 });
+
+  // Resolve the Cloudflare-only sockets API only when a WebSocket transport
+  // request is actually made; ordinary API requests remain independently usable.
+  const { connect } = await import("cloudflare:sockets");
   const pair = new WebSocketPair(),
     [client, ws] = Object.values(pair);
   ws.accept();
