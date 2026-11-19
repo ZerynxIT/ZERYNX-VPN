@@ -430,22 +430,41 @@ async function handleAPI(request, env) {
   const path = url.pathname;
   const method = request.method;
 
-  if (!env.DB) {
-    return errorResponse("DATABASE_NOT_CONFIGURED", 503);
+  // HEALTH: report Worker status even when D1 is not bound or migrations are pending.
+  if (method === "GET" && path === "/api/health") {
+    if (!env.DB) {
+      return response({
+        ok: false,
+        service: "ZERYNX VPN API",
+        version: VERSION,
+        database: "not_configured",
+        timestamp: new Date().toISOString(),
+      }, 503);
+    }
+
+    try {
+      await env.DB.prepare("SELECT 1").first();
+      return response({
+        ok: true,
+        service: "ZERYNX VPN API",
+        version: VERSION,
+        database: "connected",
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Health database check failed:", error?.message);
+      return response({
+        ok: false,
+        service: "ZERYNX VPN API",
+        version: VERSION,
+        database: "unavailable",
+        timestamp: new Date().toISOString(),
+      }, 503);
+    }
   }
 
-  // HEALTH
-
-  if (method === "GET" && path === "/api/health") {
-    await env.DB.prepare("SELECT 1").first();
-
-    return response({
-      ok: true,
-      service: "ZERYNX VPN API",
-      version: VERSION,
-      database: "connected",
-      timestamp: new Date().toISOString(),
-    });
+  if (!env.DB) {
+    return errorResponse("DATABASE_NOT_CONFIGURED", 503);
   }
 
   // SETUP STATUS
