@@ -4,7 +4,6 @@
 // ======================================================
 
 import { subscriberAPI } from "./subscriptions.js";
-import { transport } from "./transport.js";
 const VERSION = "2.0.0";
 
 const SESSION_DURATION = 30 * 60 * 1000;
@@ -674,17 +673,21 @@ async function handleAPI(request, env) {
 
 export default {
   async fetch(request, env) {
-    const requestPath = new URL(request.url).pathname;
-    const origin = getOrigin(request, env);
+    try {
+      const requestPath = new URL(request.url).pathname;
+      const origin = getOrigin(request, env);
 
-    if (requestPath === "/stream") {
-      if (request.headers.get("Origin") && !origin) {
-        return new Response("ORIGIN_NOT_ALLOWED", { status: 403 });
+      if (requestPath === "/stream") {
+        if (request.headers.get("Origin") && !origin) {
+          return new Response("ORIGIN_NOT_ALLOWED", { status: 403 });
+        }
+        // Load the transport module only for transport requests. API and
+        // health checks must not depend on the optional sockets runtime API.
+        const { transport } = await import("./transport.js");
+        return await transport(request, env);
       }
-      return transport(request, env);
-    }
 
-    // PREFLIGHT
+      // PREFLIGHT
 
     if (request.method === "OPTIONS") {
       if (!origin) {
@@ -750,6 +753,16 @@ export default {
       }
 
       return withCors(errorResponse(message, status), origin);
+      }
+    } catch (error) {
+      console.error(
+        "ZERYNX Worker entry error:",
+        error?.stack || error?.message || error,
+      );
+      return response(
+        { ok: false, error: "WORKER_RUNTIME_ERROR" },
+        500,
+      );
     }
   },
 };
