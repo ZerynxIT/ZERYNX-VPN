@@ -1,6 +1,6 @@
 const $ = (s) => document.querySelector(s);
 const box=$("#content"),dlg=$("#dialog"),form=$("#form"),fields=$("#fields");
-let api=localStorage.getItem("zerynx_api")||"",token="",account="",users=[],view="home",activity=[],handler=null,toastTimer;
+let api=location.hostname.endsWith("github.io")?(localStorage.getItem("zerynx_api")||""):location.origin,token="",account="",users=[],view="home",activity=[],handler=null,toastTimer;
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt=v=>Number(v||0).toLocaleString("fa-IR",{maximumFractionDigits:2});
 const date=v=>v?new Date(v).toLocaleDateString("fa-IR"):"—";
