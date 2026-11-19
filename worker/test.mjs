@@ -69,8 +69,15 @@ try {
     password: "a-local-test-password",
     setupKey: "local-test-only",
   };
-  assert.equal((await api("/api/setup", owner)).status, 201);
-  assert.equal((await api("/api/setup", owner)).status, 409);
+  const setupRace = await Promise.all([
+    api("/api/setup", owner),
+    api("/api/setup", owner),
+  ]);
+  assert.deepEqual(setupRace.map((r) => r.status).sort(), [201, 409]);
+  assert.equal(
+    (await api("/api/setup", { ...owner, note: "x".repeat(12000) })).status,
+    413,
+  );
   token = (await (await api("/api/auth/login", owner)).json()).token;
   assert.ok(token);
   const { link } = await (
@@ -78,7 +85,13 @@ try {
   ).json();
   const sub = new URL(link).pathname;
   const result = await api(sub);
-  assert.match(atob(await result.text()), /^vless:.*type=ws/);
+  const config = atob(await result.text());
+  assert.match(config, /^vless:.*type=ws/);
+  const configUrl = new URL(config);
+  assert.equal(configUrl.protocol, "vless:");
+  assert.equal(configUrl.port, "443");
+  assert.equal(configUrl.searchParams.get("security"), "tls");
+  assert.equal(configUrl.searchParams.get("path"), "/stream");
   const {
     users: [u],
   } = await (await api("/api/users")).json();
