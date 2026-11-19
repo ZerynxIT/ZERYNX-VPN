@@ -53,7 +53,9 @@ function getOrigin(request, env) {
     .map((value) => value.trim())
     .filter(Boolean);
 
-  return allowed.includes(origin) ? origin : null;
+  return allowed.includes(origin) || origin === new URL(request.url).origin
+    ? origin
+    : null;
 }
 
 function corsHeaders(origin) {
@@ -692,6 +694,16 @@ export default {
 
     try {
       const result = await handleAPI(request, env);
+
+      if (
+        result.status === 404 &&
+        env.ASSETS &&
+        request.method === "GET" &&
+        !requestPath.startsWith("/api/") &&
+        !requestPath.startsWith("/s/")
+      ) {
+        return env.ASSETS.fetch(request);
+      }
 
       return withCors(result, origin);
     } catch (error) {
