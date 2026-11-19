@@ -254,28 +254,30 @@ function sessionCookie(token, maxAge) {
 
 async function readJSON(request) {
   const contentType = request.headers.get("Content-Type") || "";
-
   if (!contentType.toLowerCase().includes("application/json")) {
     throw new Error("INVALID_CONTENT_TYPE");
   }
 
-  const length = Number(request.headers.get("Content-Length") || 0);
-
-  if (length > 10000) {
+  const declaredLength = Number(request.headers.get("Content-Length") || 0);
+  if (Number.isFinite(declaredLength) && declaredLength > 10000) {
     throw new Error("REQUEST_TOO_LARGE");
   }
 
+  const raw = await request.text();
+  if (new TextEncoder().encode(raw).byteLength > 10000) {
+    throw new Error("REQUEST_TOO_LARGE");
+  }
+
+  let data;
   try {
-    const data = await request.json();
-
-    if (!data || typeof data !== "object" || Array.isArray(data)) {
-      throw new Error("INVALID_JSON_OBJECT");
-    }
-
-    return data;
+    data = JSON.parse(raw);
   } catch {
     throw new Error("INVALID_JSON");
   }
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("INVALID_JSON");
+  }
+  return data;
 }
 
 // ======================================================
@@ -369,33 +371,23 @@ async function createOwner(request, env) {
     return errorResponse("PASSWORD_MUST_BE_12_TO_128_CHARACTERS", 400);
   }
 
-  const result = await env.DB.prepare(
-    "SELECT COUNT(*) AS total FROM admin_users",
-  ).first();
-
-  if (Number(result?.total || 0) > 0) {
-    return errorResponse("ALREADY_INSTALLED", 409);
-  }
-
   const id = crypto.randomUUID();
   const salt = randomToken().substring(0, 32);
-
   const passwordHash = await hashPassword(password, salt);
 
-  await env.DB.prepare(
+  // Atomic first-owner creation: concurrent setup requests cannot create
+  // multiple owner accounts between a separate COUNT and INSERT.
+  const created = await env.DB.prepare(
     `
-        INSERT INTO admin_users (
-            id,
-            username,
-            password_hash,
-            role,
-            status
-        )
-        VALUES (?, ?, ?, 'owner', 'active')
+      INSERT INTO admin_users (id, username, password_hash, role, status)
+      SELECT ?, ?, ?, 'owner', 'active'
+      WHERE NOT EXISTS (SELECT 1 FROM admin_users)
     `,
-  )
-    .bind(id, username, passwordHash)
-    .run();
+  ).bind(id, username, passwordHash).run();
+
+  if (created.meta.changes !== 1) {
+    return errorResponse("ALREADY_INSTALLED", 409);
+  }
 
   try {
     await env.DB.prepare(
@@ -652,9 +644,15 @@ async function handleAPI(request, env) {
 
 export default {
   async fetch(request, env) {
-    if (new URL(request.url).pathname === "/stream")
-      return transport(request, env);
+    const requestPath = new URL(request.url).pathname;
     const origin = getOrigin(request, env);
+
+    if (requestPath === "/stream") {
+      if (request.headers.get("Origin") && !origin) {
+        return new Response("ORIGIN_NOT_ALLOWED", { status: 403 });
+      }
+      return transport(request, env);
+    }
 
     // PREFLIGHT
 
