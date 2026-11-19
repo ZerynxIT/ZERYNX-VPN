@@ -62,6 +62,9 @@ export function transport(req, env) {
       }
       const head = parseHeader(bytes);
       if (!head) {
+        // A VLESS v0 header is far smaller than this. Do not let a client
+        // grow an unbounded partial-header buffer before authentication.
+        if (bytes.byteLength > 512) throw Error("Oversized VLESS header");
         partial = bytes;
         return;
       }
