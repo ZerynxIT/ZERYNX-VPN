@@ -462,7 +462,9 @@ async function handleAPI(request, env) {
     }
   }
 
-  if (!env.DB) {
+  // Only API and subscription routes require D1. Static assets must remain
+  // available even when the database binding is missing or misconfigured.
+  if (!env.DB && (path.startsWith("/api/") || path.startsWith("/s/"))) {
     return errorResponse("DATABASE_NOT_CONFIGURED", 503);
   }
 
