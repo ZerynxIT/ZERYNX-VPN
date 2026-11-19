@@ -33,3 +33,8 @@ jobs:
           node --check src/transport.js
           node --check src/wire.js
           node --check ../assets/js/app.js
+          node --check public/assets/js/app.js
+
+      - name: Validate Worker deployment bundle
+        working-directory: worker
+        run: npx wrangler deploy --dry-run
