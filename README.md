@@ -7,6 +7,10 @@
 **پنل مدیریت کانفیگ و اشتراک روی Cloudflare Workers — رایگان، بدون VPS**
 *Free config & subscription panel on a single Cloudflare Worker + D1 — no VPS needed*
 
+> **🔒 اطلاعیه حقوقی:** این پروژه تحت **مجوز اختصاصی ZERYNX** منتشر شده است، نه مجوز MIT یا سایر مجوزهای متن‌باز. هرگونه تغییر، ساخت نسخه مشتق‌شده، بازبرندسازی یا استفاده تجاری بدون اجازه کتبی مالک ممنوع است. استفاده و بازنشر فقط در محدوده شرایط درج‌شده در فایل [LICENSE](LICENSE) مجاز است.
+>
+> **🔒 License Notice:** This project is distributed under the **ZERYNX Proprietary Source License**, not MIT or another open-source license. Modification, derivative works, rebranding, and commercial use require prior written permission. See [LICENSE](LICENSE) for the complete terms.
+
 </div>
 
 ---
@@ -68,7 +72,11 @@
 
 ## 📄 لایسنس
 
-MIT — Copyright (c) 2026 ZERYNX. اعتبارها و الهام‌ها: [`NOTICE.md`](NOTICE.md) · متن لایسنس: [`LICENSE`](LICENSE)
+**مجوز اختصاصی ZERYNX — Copyright (c) 2026 ZERYNX (ZerynxIT). All rights reserved.**
+
+این پروژه متن‌باز (Open Source) نیست. فقط دریافت، مشاهده، اجرا و بازنشر نسخه کامل و بدون تغییر برای اهداف غیرتجاری، با حفظ کامل نام مالک، متن لایسنس و لینک مخزن اصلی، طبق شرایط مجوز مجاز است. تغییر سورس، ساخت نسخه مشتق‌شده، بازبرندسازی و هرگونه استفاده تجاری بدون اجازه کتبی قبلی ممنوع است.
+
+متن کامل و شرایط دقیق: [`LICENSE`](LICENSE) · اعتبارها و موارد متعلق به دیگران: [`NOTICE.md`](NOTICE.md)
 
 ---
 
@@ -78,6 +86,9 @@ ZERYNX is a single Cloudflare Worker that serves the admin panel (Static Assets)
 links (with a branded browser page) and a VLESS-over-WebSocket relay with per-user quota/expiry stored in D1.
 Deploy: create a D1 database, put its id into `wrangler.toml`, import the repo as a Worker with deploy command
 `npx wrangler deploy`, open the Worker URL, log in with `admin`/`admin` and set your own credentials (forced on first login).
-See [docs/DEPLOY.fa.md](docs/DEPLOY.fa.md). MIT licensed.
+See [docs/DEPLOY.fa.md](docs/DEPLOY.fa.md).
+
+**License:** ZERYNX Proprietary Source License. This is not an open-source or MIT-licensed project. Modification,
+derivative works, rebranding, and commercial use require prior written permission. See [LICENSE](LICENSE) for full terms.
 
 </details>
