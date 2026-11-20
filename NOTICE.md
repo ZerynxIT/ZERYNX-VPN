@@ -1,6 +1,8 @@
 # Notices and credits
 
-**ZERYNX** — Copyright (c) 2026 ZERYNX (ZerynxIT). Released under the MIT License (see `LICENSE`).
+**ZERYNX** — Copyright (c) 2026 ZERYNX (ZerynxIT). The original project materials are governed by the **ZERYNX Proprietary Source License** (see `LICENSE`). This repository is not distributed under the MIT License or another open-source license.
+
+The proprietary license applies to the original ZERYNX project materials. Third-party components and services identified below remain subject to their respective owners' licenses and terms; this notice does not relicense those materials.
 
 ## Inspiration
 
