@@ -81,6 +81,18 @@ th{text-align:start;color:var(--mute);font-weight:500;font-size:13px;padding:8px
 .rw{display:flex;gap:6px;flex-wrap:wrap}
 .empty{padding:30px;text-align:center;color:var(--mute)}
 .form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 14px}
+#create .card{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(12,18,31,.98),rgba(5,10,20,.98));border-color:#263449;box-shadow:0 22px 70px rgba(0,0,0,.24)}
+#create .card:before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,transparent,#263449,#38bdf8,transparent);opacity:.85}
+#create .fld{margin-bottom:18px}
+#create .fld>span{font-weight:700;color:#cbd5e1}
+#create .in{min-height:48px;background:#080e19;border-color:#29384d;border-radius:12px;transition:border-color .2s,box-shadow .2s}
+#create .in:focus{border-color:#38bdf8;box-shadow:0 0 0 3px rgba(56,189,248,.12)}
+#create .hint{padding:10px 12px;margin:4px 0 16px;border:1px solid #263449;border-radius:10px;background:rgba(15,23,42,.65);color:#aab8ca}
+#create #cf>.btn{min-width:190px;background:linear-gradient(135deg,#1e293b,#075985);border-color:#25617b}
+#create .res{background:rgba(2,6,13,.7);border-color:#31516b}
+#de,#dq,#dc{background:linear-gradient(145deg,#0c1422,#050a12);border-color:#334155}
+#de .in,#dc .in{background:#080e19;border-color:#334155}
+@media(max-width:520px){#create .form{grid-template-columns:1fr}#create #cf>.btn{width:100%}}
 .res{margin-top:16px;padding:14px;border:1px dashed var(--blue);border-radius:12px;text-align:center}.res .l{word-break:break-all;font-size:13px;margin:8px 0;color:var(--mute)}
 .qr{background:#fff;padding:10px;border-radius:12px;width:max-content;margin:10px auto}.qr svg{display:block}
 .sl{display:grid;gap:10px}.sl .card{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:14px}.sl .l{flex:1;min-width:220px;font-size:12px;word-break:break-all;color:var(--mute)}
@@ -163,9 +175,9 @@ footer{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:v
     <section id="p-create" hidden>
       <div class="ph"><div><div class="ey">CREATE ACCOUNT</div><h2 data-i="createT"></h2><p data-i="createD"></p></div></div>
       <section class="card"><form id="cf" autocomplete="off"><div class="form">
-        <label class="fld"><span data-i="name"></span><input class="in" id="cn" required maxlength="40"></label>
-        <label class="fld"><span data-i="limit"></span><input class="in ltr" id="cq" type="number" min="0" step="any" value="50"></label>
-        <label class="fld"><span data-i="valid"></span><input class="in ltr" id="cd2" type="number" min="0" value="30"></label></div>
+        <label class="fld"><span data-i="name"></span><input class="in" id="cn" required maxlength="40" placeholder="مثلاً user-001"></label>
+        <label class="fld"><span data-i="limit"></span><input class="in ltr" id="cq" type="number" min="0" step="any" placeholder="مثلاً 50" inputmode="decimal"></label>
+        <label class="fld"><span data-i="valid"></span><input class="in ltr" id="cd2" type="number" min="0" placeholder="مثلاً 30" inputmode="numeric"></label></div>
         <p class="hint" data-i="zero"></p><button class="btn" type="submit" data-i="make"></button></form>
         <div class="res" id="cr" hidden><b data-i="made"></b><div class="l ltr" id="cl"></div><div class="qr" id="cq2"></div><div class="ac" style="justify-content:center"><button class="btn" id="cc" type="button" data-i="copy"></button></div></div></section>
     </section>
@@ -233,7 +245,7 @@ tot:['کل کاربران','Total users'],tot2:['ثبت‌شده','Registered'],
 ovT:['نمای کلی ترافیک','Traffic overview'],ovD:['مصرف روزانه (گیگابایت)','Daily usage (GB)'],sysT:['وضعیت سیستم','System status'],sysD:['وضعیت اجزای پنل','Panel components'],recent:['کاربران اخیر','Recent users'],recentD:['آخرین کاربران ساخته‌شده','Latest accounts'],viewall:['مشاهده همه','View all'],
 name:['کاربر','User'],usageC:['مصرف','Usage'],state:['وضعیت','Status'],created:['ساخته‌شده','Created'],exp:['انقضا','Expires'],last:['آخرین اتصال','Last seen'],on:['فعال','Enabled'],actions:['عملیات','Actions'],
 usersT:['مدیریت کاربران','User management'],usersD:['مشاهده و مدیریت حساب‌ها','View and manage accounts'],search:['جستجو…','Search…'],empty:['هنوز چیزی ثبت نشده است.','Nothing here yet.'],
-createT:['ساخت کاربر جدید','Create new user'],createD:['حجم و انقضا را مشخص کن و لینک اشتراک بگیر','Set quota and expiry, get a subscription link'],limit:['حجم (گیگابایت)','Quota (GB)'],valid:['مدت اعتبار (روز)','Validity (days)'],zero:['صفر یعنی نامحدود.','Zero means unlimited.'],make:['ساخت و دریافت لینک','Create & get link'],made:['کاربر ساخته شد','User created'],copy:['کپی لینک','Copy link'],
+createT:['ساخت کاربر جدید','Create new user'],createD:['حجم و انقضا را مشخص کن و لینک اشتراک بگیر','Set quota and expiry, get a subscription link'],limit:['حجم (گیگابایت)','Quota (GB)'],valid:['مدت اعتبار (روز)','Validity (days)'],zero:['برای حجم و اعتبار، مقدار ۰ یعنی نامحدود. فیلدها را خالی نگذار؛ مقدار دلخواه را وارد کن.','Enter 0 for unlimited quota or validity. Do not leave these fields empty.'],make:['ساخت و دریافت لینک','Create & get link'],made:['کاربر ساخته شد','User created'],copy:['کپی لینک','Copy link'],
 subsT:['مدیریت اشتراک‌ها','Subscriptions'],subsD:['لینک اشتراک هر کاربر','Every user’s subscription link'],trafT:['مصرف ترافیک','Traffic monitoring'],trafD:['مصرف روزانه و پرمصرف‌ترین کاربران','Daily usage and top users'],daily:['مصرف ۳۰ روز اخیر','Last 30 days'],top:['پرمصرف‌ها','Top users'],topD:['بر اساس مصرف کل','By total usage'],
 logsT:['گزارش فعالیت‌ها','Activity logs'],logsD:['آخرین ۱۰۰ رویداد مدیریتی','Latest 100 admin events'],time:['زمان','Time'],action:['رویداد','Event'],detail:['جزئیات','Detail'],
 setT:['تنظیمات سیستم','System settings'],setD:['حساب مدیر و تنظیمات اتصال','Admin account and connection'],acct:['حساب مدیر','Admin account'],acctD:['نام کاربری و رمز را تغییر بده','Change username and password'],curpass:['رمز فعلی','Current password'],newpass:['رمز جدید (حداقل ۶ کاراکتر)','New password (min 6 chars)'],save:['ذخیره','Save'],
@@ -320,7 +332,7 @@ $('#ef').addEventListener('submit',async e=>{e.preventDefault();
 $('#ex').onclick=()=>$('#de').close();$('#qx').onclick=()=>$('#dq').close();$('#qc').onclick=()=>copy(qrText);
 $('#cf').addEventListener('submit',async e=>{e.preventDefault();
  try{const r=await call('/api/users',{method:'POST',body:JSON.stringify({name:$('#cn').value.trim(),quotaGB:+$('#cq').value||0,days:+$('#cd2').value||0})});users.unshift(r.user);render();
-  $('#cl').textContent=r.user.sub_url;qrText=r.user.sub_url;qr($('#cq2'),qrText);$('#cr').hidden=false;$('#cf').reset();$('#cq').value=50;$('#cd2').value=30}catch(x){toast(T('fail'))}});
+  $('#cl').textContent=r.user.sub_url;qrText=r.user.sub_url;qr($('#cq2'),qrText);$('#cr').hidden=false;$('#cf').reset()}catch(x){toast(T('fail'))}});
 $('#cc').onclick=()=>copy(qrText);$('#q').oninput=render;$('#rf').onclick=load;$('#out').onclick=logout;
 $('#lg').onclick=()=>{lang=lang==='fa'?'en':'fa';ls('zx_l',lang);i18n()};$('#th').onclick=()=>{theme=theme==='dark'?'light':'dark';ls('zx_t',theme);i18n()};
 $('#mn').onclick=()=>{$('#side').classList.add('open');$('#ov').classList.add('on')};$('#ov').onclick=()=>{$('#side').classList.remove('open');$('#ov').classList.remove('on')};
