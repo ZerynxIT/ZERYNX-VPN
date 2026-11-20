@@ -1,21 +1,54 @@
-MIT License
+ZERYNX VPN — PROPRIETARY SOURCE LICENSE
+Copyright (c) 2026 ZERYNX (ZerynxIT). All rights reserved.
 
-Copyright (c) 2026 ZERYNX (ZerynxIT)
+This project is provided as source-available software. It is NOT licensed under
+the MIT License or any other open-source license.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. OWNERSHIP AND ATTRIBUTION
+The original ZERYNX VPN project, including its original source code and
+documentation, remains the intellectual property of ZERYNX (ZerynxIT), except
+for third-party materials that are identified as belonging to their respective
+owners.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Any permitted copy or redistribution must retain this entire license notice,
+the copyright notice above, and a clear attribution stating that the original
+project was created and is owned by ZERYNX (ZerynxIT). It must also retain a
+link to the original repository:
+https://github.com/ZerynxIT/ZERYNX-VPN
 
+2. LIMITED PERMISSION TO COPY AND REDISTRIBUTE
+You may download, view, run, and redistribute an exact, complete, unmodified
+copy of this project solely for personal, educational, or other
+non-commercial purposes, provided that all notices and attribution required
+by Section 1 remain intact.
+
+3. PROHIBITED ACTIVITIES
+Unless you obtain prior, express, written permission from ZERYNX (ZerynxIT),
+you may not:
+
+- Modify, adapt, translate, alter, or create derivative works based on the
+  source code or other project materials.
+- Publish, distribute, or present a modified version of this project.
+- Use this project or any substantial portion of it for commercial purposes,
+  including selling it, offering it as a paid service, or using it to generate
+  revenue.
+- Rebrand, rename, or present the original project or a copy as your own
+  original work, product, or project.
+- Remove, obscure, alter, or omit the copyright notice, this license, the
+  original project link, or attribution to ZERYNX (ZerynxIT).
+- Sublicense the project or grant permissions beyond those expressly stated
+  in this license.
+
+4. PERMISSION REQUESTS
+For permissions not expressly granted by this license, contact the copyright
+holder, ZERYNX (ZerynxIT), and obtain written authorization before acting.
+
+5. NO WARRANTY
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING
+FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+All rights not expressly granted above are reserved by ZERYNX (ZerynxIT).
