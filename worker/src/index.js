@@ -52,13 +52,19 @@ export default {
       const dynamic = isVless(p) || p.startsWith('/api/') || p.startsWith('/sub/');
       if (!dynamic && !isWs) return env.ASSETS ? env.ASSETS.fetch(req) : landing();
       if (p === '/api/health') {
+        const healthCors = corsHeaders(req, env);
+        if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: healthCors });
+        const healthJson = (data, status = 200) => new Response(JSON.stringify(data), {
+          status,
+          headers: { ...healthCors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+        });
         try {
           if (!env.DB) throw new Error('D1 binding "DB" is missing');
           await init(env);
           await env.DB.prepare('SELECT 1').first();
-          return json({ ok: true, database: 'connected', version: VERSION });
+          return healthJson({ ok: true, database: 'connected', version: VERSION });
         } catch (e) {
-          return json({ ok: false, database: 'error', error: String((e && e.message) || e) }, 503);
+          return healthJson({ ok: false, database: 'error', error: String((e && e.message) || e) }, 503);
         }
       }
       if (!env.DB) return json({ ok: false, error: 'D1 binding "DB" is missing' }, 503);
