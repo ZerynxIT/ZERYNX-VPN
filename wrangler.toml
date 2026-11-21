@@ -1,4 +1,4 @@
-# ZERYNX — single Cloudflare Worker: panel + API + subscription + relay.
+# ZERYNX — single Cloudflare Worker: panel + API + subscription + relay..
 name = "zerynx-vpn"
 main = "worker/src/index.js"
 compatibility_date = "2025-11-01"
