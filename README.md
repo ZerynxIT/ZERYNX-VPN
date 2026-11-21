@@ -7,9 +7,11 @@
 **پنل مدیریت کانفیگ و اشتراک روی Cloudflare Workers — رایگان، بدون VPS**
 *Free config & subscription panel on a single Cloudflare Worker + D1 — no VPS needed*
 
+
 > **🔒 اطلاعیه حقوقی:** این پروژه تحت **مجوز اختصاصی ZERYNX** منتشر شده است، نه مجوز MIT یا سایر مجوزهای متن‌باز. هرگونه تغییر، ساخت نسخه مشتق‌شده، بازبرندسازی یا استفاده تجاری بدون اجازه کتبی مالک ممنوع است. استفاده و بازنشر فقط در محدوده شرایط درج‌شده در فایل [LICENSE](LICENSE) مجاز است.
 >
 > **🔒 License Notice:** This project is distributed under the **ZERYNX Proprietary Source License**, not MIT or another open-source license. Modification, derivative works, rebranding, and commercial use require prior written permission. See [LICENSE](LICENSE) for the complete terms.
+
 
 </div>
 
@@ -18,14 +20,14 @@
 ## ✨ امکانات
 
 - **همه‌چیز در یک Worker:** پنل، API، لینک ساب و موتور پروکسی. آدرس Worker را باز می‌کنی و پنل بالا می‌آید.
-- **داشبورد:** آمار کاربران، نمودار مصرف روزانه، وضعیت سیستم، کاربران اخیر
-- **کاربران:** ساخت با حجم (گیگ) و انقضا (روز)، ویرایش، روشن/خاموش، ریست حجم، حذف، جستجو، QR
-- **اشتراک‌ها، ترافیک و گزارش‌ها** (۱۰۰ رویداد مدیریتی اخیر)
-- **صفحه‌ی لینک ساب** با برند زرینیکس وقتی در مرورگر باز شود (مصرف، انقضا، افزودن به Hiddify / v2rayNG / Clash / sing-box)
-- **ساب** سازگار با Hiddify، v2rayNG، Clash/Mihomo، sing-box، با هدر مصرف و انقضا و چند آی‌پی تمیز
-- **موتور پروکسی** VLESS روی WebSocket + TLS با سقف حجم/انقضا، DNS روی UDP (از طریق DoH)، IPv4/IPv6/دامنه، Timeout و retry با `PROXY_IP`
-- **ریسپانسیو** (موبایل و دسکتاپ)، فارسی RTL با دکمه‌ی EN، تم تیره/روشن
-- دیتابیس **خودکار** ساخته می‌شود (جدول‌های `zx_*`)؛ migration دستی لازم نیست
+- **حجم و انقضای دقیق:** حجم با «رزرو اتمیک» در دیتابیس اعمال می‌شود؛ هیچ ترکیبی از اتصال‌های هم‌زمان نمی‌تواند از سقف رد شود. مصرف آپلود + دانلود شمرده می‌شود. هر ۱ گیگ = ۱۰۲۴ مگابایت.
+- **ساخت کاربر (پنجره‌ی کوچک):** نام، حجم، مدت، تعداد کانفیگ و بخش «تنظیمات پیشرفته»: سقف مصرف روزانه، محدودیت تعداد IP هم‌زمان، شروع انقضا از «ساخت» یا «اولین اتصال» و یادداشت. **حجم یا مدت ۰ یا خالی = نامحدود**؛ اگر هر دو خالی باشند کاربر کاملاً نامحدود است.
+- **حداقل ۱۰ کانفیگ در هر لینک ساب** (قابل افزایش تا ۲۰۰): ترکیب آدرس‌ها × پورت‌های Cloudflare × fingerprintها، با Early Data (0-RTT) روی نیمی از آن‌ها
+- **ساب چندفرمتی:** Base64 (Hiddify، v2rayNG، …)، Clash/Mihomo با `url-test`، sing-box با `urltest`، همراه با هدر مصرف و انقضا؛ آی‌پی‌های تمیز قابل تنظیم از پنل
+- **صفحه‌ی لینک ساب** برندشده وقتی در مرورگر باز شود (مصرف، انقضا، تعداد کانفیگ، افزودن به اپ‌ها، کپی)
+- **داشبورد:** آمار، نمودار ۱۴ و ۳۰ روزه‌ی واقعی، وضعیت سیستم، کاربران اخیر، اشتراک‌ها، ترافیک، گزارش‌ها
+- **ریسپانسیو**، فارسی RTL با دکمه‌ی EN، تم تیره/روشن
+- **پایدار:** Timeout اتصال، retry با `PROXY_IP`، DNS روی UDP (DoH با دو resolver)، بلاک پورت ۲۵ و آدرس‌های داخلی، دیتابیس و ستون‌ها خودکار ساخته/به‌روز می‌شوند
 
 ## 🧱 معماری
 
@@ -56,27 +58,31 @@
 | GET | `/api/health` | سلامت Worker و D1 (عمومی) |
 | POST | `/api/login` | `{username,password}` ← `{token, must_change}` |
 | POST | `/api/account` | تغییر نام کاربری/رمز |
-| GET/POST | `/api/users` | لیست / ساخت `{name, quotaGB, days}` (۰ = نامحدود) |
-| PATCH/DELETE | `/api/users/:id` | `enabled`, `quotaGB`, `days`, `resetUsage` / حذف |
+| GET/POST | `/api/users` | لیست / ساخت `{name, quotaGB, days, cfgCount, dailyGB, ipLimit, startOnUse, note}` (۰ = نامحدود) |
+| PATCH/DELETE | `/api/users/:id` | هر کدام از فیلدهای بالا + `enabled`, `resetUsage` / حذف |
 | GET | `/api/stats`, `/api/logs`, `/api/status` | آمار روزانه، گزارش‌ها، وضعیت |
 | GET/PUT | `/api/settings` | `clean_ips`, `proxy_ip`, `remark` |
-| GET | `/sub/:token` | ساب (`?format=clash` برای Clash؛ مرورگر ← صفحه‌ی اشتراک) |
+| GET | `/sub/:token` | ساب (`?format=clash` / `singbox` / `raw`؛ مرورگر ← صفحه‌ی اشتراک) |
+
+## ⚙️ دقت حجم و انقضا چطور کار می‌کند
+
+- قبل از عبور هر داده، حجم در D1 با یک `UPDATE` اتمیک «رزرو» می‌شود که از حجم کل، سقف روزانه، انقضا و وضعیت فعال/غیرفعال عبور نمی‌کند. اتصال‌های یک کاربر در یک ایزوله یک استخر مشترک دارند؛ حجم رزروشده‌ی استفاده‌نشده هنگام بسته‌شدن آخرین اتصال برگردانده می‌شود.
+- هنگام پایان حجم، آخرین بسته به‌صورت جزئی ارسال می‌شود و اتصال قطع می‌شود؛ خطا حداکثر چند کیلوبایت است.
+- انقضا هنگام اتصال، در هر رزرو و هر ۳۰ ثانیه برای اتصال‌های جاری بررسی می‌شود؛ غیرفعال‌کردن کاربر هم اتصال‌های جاری را قطع می‌کند.
+- مصرف «پیلود پروکسی» است (بدون سربار TLS/WebSocket)، پس ممکن است چند درصد کمتر از آمار شبکه‌ی خود دستگاه باشد.
 
 ## ⚠️ محدودیت‌های صادقانه
 
-- فقط **VLESS روی WebSocket** (بدون Trojan/Shadowsocks/Mux/Early Data). UDP فقط برای DNS.
+- فقط **VLESS روی WebSocket** (بدون Trojan/Shadowsocks/Mux). UDP فقط برای DNS. Workers نمی‌تواند TCP/UDP خام مثل یک سرور Xray انجام دهد.
 - Workers نمی‌تواند مستقیم به بعضی آی‌پی‌های Cloudflare وصل شود؛ برای آن `PROXY_IP` را در تنظیمات پنل بگذار.
-- شمارش حجم هر ~۵۰۰ کیلوبایت و هنگام بسته‌شدن اتصال در D1 ثبت می‌شود. برای اتصال‌های هم‌زمان زیاد، سقف حجم تقریبی است (مقداری فراتر از سقف ممکن است).
+- پورت‌های متنوع (۸۴۴۳، ۲۰۵۳، ۲۰۸۳، ۲۰۸۷، ۲۰۹۶) و fingerprintهای مختلف در کانفیگ‌ها برای تنوع است؛ همه‌ی آن‌ها روی هر شبکه‌ای کار نمی‌کنند و کلاینت (با `url-test`) بهترین را انتخاب می‌کند.
+- سقف رایگان D1: حدود ۱۰۰ هزار نوشتن در روز. استخر مشترک تعداد نوشتن‌ها را کم می‌کند، اما ترافیک بسیار سنگین ممکن است به سقف برسد.
 - شرایط استفاده‌ی Cloudflare پروکسی روی Workers را محدود می‌کند و ممکن است حساب محدود شود. **مسئولیت استفاده با خودت است.**
-- تست‌های خودکار پروژه منطق را با دیتابیس و سوکت شبیه‌سازی‌شده می‌سنجد؛ **اتصال واقعی از کلاینت شما را جایگزین نمی‌کند.**
+- تست‌های خودکار با دیتابیس و سوکت شبیه‌سازی‌شده اجرا شده‌اند؛ **اتصال واقعی از کلاینت شما را جایگزین نمی‌کند.**
 
 ## 📄 لایسنس
 
-**مجوز اختصاصی ZERYNX — Copyright (c) 2026 ZERYNX (ZerynxIT). All rights reserved.**
-
-این پروژه متن‌باز (Open Source) نیست. فقط دریافت، مشاهده، اجرا و بازنشر نسخه کامل و بدون تغییر برای اهداف غیرتجاری، با حفظ کامل نام مالک، متن لایسنس و لینک مخزن اصلی، طبق شرایط مجوز مجاز است. تغییر سورس، ساخت نسخه مشتق‌شده، بازبرندسازی و هرگونه استفاده تجاری بدون اجازه کتبی قبلی ممنوع است.
-
-متن کامل و شرایط دقیق: [`LICENSE`](LICENSE) · اعتبارها و موارد متعلق به دیگران: [`NOTICE.md`](NOTICE.md)
+MIT — Copyright (c) 2026 ZERYNX. اعتبارها و الهام‌ها: [`NOTICE.md`](NOTICE.md) · متن لایسنس: [`LICENSE`](LICENSE)
 
 ---
 
@@ -86,9 +92,6 @@ ZERYNX is a single Cloudflare Worker that serves the admin panel (Static Assets)
 links (with a branded browser page) and a VLESS-over-WebSocket relay with per-user quota/expiry stored in D1.
 Deploy: create a D1 database, put its id into `wrangler.toml`, import the repo as a Worker with deploy command
 `npx wrangler deploy`, open the Worker URL, log in with `admin`/`admin` and set your own credentials (forced on first login).
-See [docs/DEPLOY.fa.md](docs/DEPLOY.fa.md).
-
-**License:** ZERYNX Proprietary Source License. This is not an open-source or MIT-licensed project. Modification,
-derivative works, rebranding, and commercial use require prior written permission. See [LICENSE](LICENSE) for full terms.
+See [docs/DEPLOY.fa.md](docs/DEPLOY.fa.md). MIT licensed.
 
 </details>
